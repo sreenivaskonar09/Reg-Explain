@@ -546,9 +546,24 @@ async def get_global_explanation(scenario_type: str = "severely_adverse"):
     explainer.initialize_explainer(X_static, feature_names)
     shap_results = explainer.explain_predictions(X_static)
     
+    # Convert numpy types to Python types for JSON serialization
+    def convert_numpy_types(obj):
+        if isinstance(obj, dict):
+            return {k: convert_numpy_types(v) for k, v in obj.items()}
+        elif isinstance(obj, list):
+            return [convert_numpy_types(v) for v in obj]
+        elif isinstance(obj, np.floating):
+            return float(obj)
+        elif isinstance(obj, np.integer):
+            return int(obj)
+        elif isinstance(obj, np.ndarray):
+            return obj.tolist()
+        else:
+            return obj
+    
     return {
         "scenario": scenario_type,
-        "global_importance": shap_results['global_importance'],
+        "global_importance": convert_numpy_types(shap_results['global_importance']),
         "expected_value": float(shap_results['expected_value']),
         "feature_names": shap_results['feature_names']
     }
