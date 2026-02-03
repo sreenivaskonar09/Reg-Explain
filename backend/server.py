@@ -287,13 +287,28 @@ async def train_models(config: TrainingConfig):
     ensemble.save(str(model_dir / 'ensemble'))
     
     # Store training record
+    # Convert numpy types to Python types for MongoDB
+    def convert_numpy_types(obj):
+        if isinstance(obj, dict):
+            return {k: convert_numpy_types(v) for k, v in obj.items()}
+        elif isinstance(obj, list):
+            return [convert_numpy_types(v) for v in obj]
+        elif isinstance(obj, np.floating):
+            return float(obj)
+        elif isinstance(obj, np.integer):
+            return int(obj)
+        elif isinstance(obj, np.ndarray):
+            return obj.tolist()
+        else:
+            return obj
+    
     training_record = {
         'id': str(uuid.uuid4()),
         'timestamp': datetime.now(timezone.utc).isoformat(),
         'config': config.model_dump(),
-        'lstm_weight': lstm_weight,
-        'xgb_weight': xgb_weight,
-        'feature_importance': xgb_model.get_feature_importance()
+        'lstm_weight': float(lstm_weight),
+        'xgb_weight': float(xgb_weight),
+        'feature_importance': convert_numpy_types(xgb_model.get_feature_importance())
     }
     
     await db.training_runs.insert_one(training_record)
