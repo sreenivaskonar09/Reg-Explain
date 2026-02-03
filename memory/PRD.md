@@ -18,7 +18,7 @@ Build a next-generation CCAR (Comprehensive Capital Analysis and Review) framewo
 - Real FRED macro data integration
 - Synthetic bank portfolio generation
 
-## What's Been Implemented (January 2026)
+## What's Been Implemented (December 2025)
 
 ### Backend (FastAPI)
 - ✅ Data ingestion endpoints (synthetic banks, FRED macro data)
@@ -36,6 +36,7 @@ Build a next-generation CCAR (Comprehensive Capital Analysis and Review) framewo
 - ✅ Explainability tab (SHAP, AI analysis)
 - ✅ Reports tab (CSV downloads)
 - ✅ Scenario selector (Baseline, Adverse, Severely Adverse)
+- ✅ Bloomberg Terminal dark theme (verified December 2025)
 
 ### Key Features
 - Real-time macro indicators from FRED API
