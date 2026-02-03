@@ -423,6 +423,21 @@ async def run_forecast(request: ForecastRequest):
         bank_df, ppnr_forecasts, scenario_df, request.n_quarters
     )
     
+    # Convert numpy types to Python types for MongoDB
+    def convert_numpy_types(obj):
+        if isinstance(obj, dict):
+            return {k: convert_numpy_types(v) for k, v in obj.items()}
+        elif isinstance(obj, list):
+            return [convert_numpy_types(v) for v in obj]
+        elif isinstance(obj, np.floating):
+            return float(obj)
+        elif isinstance(obj, np.integer):
+            return int(obj)
+        elif isinstance(obj, np.ndarray):
+            return obj.tolist()
+        else:
+            return obj
+    
     # Store results
     result_id = str(uuid.uuid4())
     result_record = {
@@ -430,9 +445,9 @@ async def run_forecast(request: ForecastRequest):
         'scenario': request.scenario_type,
         'run_date': datetime.now(timezone.utc).isoformat(),
         'n_quarters': request.n_quarters,
-        'trajectory': trajectory.to_dict(orient='records'),
-        'ppnr_forecasts': ppnr_forecasts.to_dict(orient='records'),
-        'scenario_data': scenario_df.to_dict(orient='records')
+        'trajectory': convert_numpy_types(trajectory.to_dict(orient='records')),
+        'ppnr_forecasts': convert_numpy_types(ppnr_forecasts.to_dict(orient='records')),
+        'scenario_data': convert_numpy_types(scenario_df.to_dict(orient='records'))
     }
     
     await db.forecast_results.insert_one(result_record)
