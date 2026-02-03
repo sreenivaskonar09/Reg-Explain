@@ -458,11 +458,11 @@ async def run_forecast(request: ForecastRequest):
     return {
         "result_id": result_id,
         "scenario": request.scenario_type,
-        "min_cet1": trajectory['cet1_ratio'].min(),
-        "breach_count": breach_analysis['banks_with_breach'],
-        "total_banks": breach_analysis['total_banks'],
-        "first_breach_quarter": breach_analysis['first_breach_quarter'],
-        "trajectory_preview": trajectory.head(20).to_dict(orient='records')
+        "min_cet1": float(trajectory['cet1_ratio'].min()),
+        "breach_count": int(breach_analysis['banks_with_breach']),
+        "total_banks": int(breach_analysis['total_banks']),
+        "first_breach_quarter": int(breach_analysis['first_breach_quarter']) if breach_analysis['first_breach_quarter'] is not None else None,
+        "trajectory_preview": convert_numpy_types(trajectory.head(20).to_dict(orient='records'))
     }
 
 
