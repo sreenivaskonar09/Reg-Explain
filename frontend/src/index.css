@@ -6,7 +6,7 @@
 
 /* Bloomberg Terminal Theme Variables */
 :root {
-  --bg-primary: #0A0E14;
+  --bg-primary: #0D1117;
   --bg-surface: #161B22;
   --bg-elevated: #1C2128;
   --accent-primary: #00D1FF;
@@ -62,7 +62,7 @@ body {
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background-color: #0A0E14;
+  background-color: #0D1117;
   color: #E6EDF3;
   min-height: 100vh;
 }
@@ -74,7 +74,7 @@ body {
 }
 
 ::-webkit-scrollbar-track {
-  background: #0A0E14;
+  background: #0D1117;
 }
 
 ::-webkit-scrollbar-thumb {
@@ -132,7 +132,7 @@ body {
 /* Button styles */
 .btn-bloomberg {
   background-color: #00D1FF;
-  color: #0A0E14;
+  color: #0D1117;
   font-weight: 600;
   transition: all 0.2s ease;
 }
