@@ -167,7 +167,19 @@ class QuarterlyPPNRForecaster:
             
             # Create features
             X_temporal = create_temporal_features(macro_to_q)
-            X_static, _ = create_static_features(bank_data, macro_to_q)
+            X_static, feature_names = create_static_features(bank_data, macro_to_q)
+            
+            # Ensure consistent feature dimensions (use only the 5 core features)
+            core_features = ['cre_exposure', 'residential_exposure', 'cet1_ratio', 'total_assets_log', 'npl_ratio']
+            if len(feature_names) > 5:
+                # Find indices of core features
+                core_indices = []
+                for core_feat in core_features:
+                    if core_feat in feature_names:
+                        core_indices.append(feature_names.index(core_feat))
+                
+                if len(core_indices) == 5:
+                    X_static = X_static[:, core_indices]
             
             # Handle shape mismatches
             if len(X_temporal) == 0:
