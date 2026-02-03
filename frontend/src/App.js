@@ -24,7 +24,7 @@ const API_URL = process.env.REACT_APP_BACKEND_URL;
 
 // Bloomberg Terminal Color Palette
 const COLORS = {
-  bgPrimary: '#0A0E14',
+  bgPrimary: '#0D1117',
   bgSurface: '#161B22',
   bgElevated: '#1C2128',
   accentCyan: '#00D1FF',
