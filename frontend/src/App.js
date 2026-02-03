@@ -8,23 +8,35 @@ import { Badge } from './components/ui/badge';
 import { Progress } from './components/ui/progress';
 import { Alert, AlertDescription, AlertTitle } from './components/ui/alert';
 import { ScrollArea } from './components/ui/scroll-area';
-import { Separator } from './components/ui/separator';
 import { 
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, 
   ResponsiveContainer, BarChart, Bar, AreaChart, Area, ComposedChart
 } from 'recharts';
 import { 
-  TrendingDown, AlertTriangle, CheckCircle, Activity, Database, 
-  Brain, FileText, Download, RefreshCw, Play, ChevronRight,
-  Building2, DollarSign, Percent, Shield, Zap
+  TrendingDown, AlertTriangle, Activity, Database, 
+  Brain, FileText, Download, RefreshCw, Play,
+  Building2, Shield, Zap
 } from 'lucide-react';
 import axios from 'axios';
 import './App.css';
 
 const API_URL = process.env.REACT_APP_BACKEND_URL;
 
+// Bloomberg Terminal Color Palette
+const COLORS = {
+  bgPrimary: '#0A0E14',
+  bgSurface: '#161B22',
+  bgElevated: '#1C2128',
+  accentCyan: '#00D1FF',
+  accentGreen: '#00FF41',
+  accentRed: '#FF3131',
+  accentYellow: '#FFB800',
+  textPrimary: '#E6EDF3',
+  textSecondary: '#8B949E',
+  border: '#30363D'
+};
+
 function App() {
-  // State management
   const [scenarios, setScenarios] = useState({});
   const [selectedScenario, setSelectedScenario] = useState('baseline');
   const [bankData, setBankData] = useState([]);
@@ -36,7 +48,6 @@ function App() {
   const [shapExplanation, setShapExplanation] = useState(null);
   const [aiExplanation, setAiExplanation] = useState(null);
   
-  // Training configuration
   const [trainingConfig, setTrainingConfig] = useState({
     lstm_units: 64,
     lstm_dropout: 0.2,
@@ -46,15 +57,6 @@ function App() {
     xgb_learning_rate: 0.05
   });
 
-  // Custom scenario parameters
-  const [customParams, setCustomParams] = useState({
-    unemployment: 10.0,
-    vix: 72,
-    hpi_decline: -25,
-    rate_shock: 300
-  });
-
-  // Fetch initial data
   useEffect(() => {
     fetchScenarios();
     fetchModelStatus();
@@ -106,7 +108,6 @@ function App() {
     setTrainingProgress(10);
     
     try {
-      // Simulate progress
       const progressInterval = setInterval(() => {
         setTrainingProgress(prev => Math.min(prev + 10, 90));
       }, 2000);
@@ -132,7 +133,6 @@ function App() {
         n_quarters: 9
       });
       
-      // Fetch full results
       const fullResults = await axios.get(`${API_URL}/api/forecast/results/${response.data.result_id}`);
       setForecastResults(fullResults.data);
     } catch (error) {
@@ -163,7 +163,6 @@ function App() {
     setLoading(prev => ({ ...prev, ai: false }));
   };
 
-  // Calculate metrics from forecast
   const getMetrics = useCallback(() => {
     if (!forecastResults?.trajectory) return null;
     
@@ -186,7 +185,6 @@ function App() {
 
   const metrics = getMetrics();
 
-  // Prepare chart data
   const getTrajectoryData = useCallback(() => {
     if (!forecastResults?.trajectory) return [];
     
@@ -218,37 +216,49 @@ function App() {
   }, [forecastResults]);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
+    <div className="min-h-screen" style={{ backgroundColor: COLORS.bgPrimary }}>
       {/* Header */}
-      <header className="border-b border-slate-800 bg-slate-900/50 backdrop-blur-sm sticky top-0 z-50">
+      <header className="border-b sticky top-0 z-50" style={{ borderColor: COLORS.border, backgroundColor: COLORS.bgSurface }}>
         <div className="container mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <div className="p-2 bg-gradient-to-br from-blue-600 to-cyan-600 rounded-xl">
-                <Activity className="w-6 h-6 text-white" />
+              <div className="p-2 rounded-lg" style={{ backgroundColor: COLORS.accentCyan }}>
+                <Activity className="w-6 h-6" style={{ color: COLORS.bgPrimary }} />
               </div>
               <div>
-                <h1 className="text-2xl font-bold text-white tracking-tight">Reg-Explain</h1>
-                <p className="text-sm text-slate-400">PPNR Stress-Testing | CCAR Framework 2026</p>
+                <h1 className="text-2xl font-bold tracking-tight" style={{ color: COLORS.textPrimary }}>
+                  REG-EXPLAIN
+                </h1>
+                <p className="text-sm" style={{ color: COLORS.textSecondary }}>
+                  PPNR Stress-Testing | CCAR Framework 2026
+                </p>
               </div>
             </div>
             <div className="flex items-center gap-4">
               <Badge 
                 data-testid="model-status-badge"
-                variant={modelStatus?.all_ready ? "default" : "secondary"}
-                className={modelStatus?.all_ready ? "bg-emerald-600" : "bg-slate-700"}
+                className="px-3 py-1 font-mono text-xs"
+                style={{ 
+                  backgroundColor: modelStatus?.all_ready ? 'rgba(0, 255, 65, 0.15)' : 'rgba(139, 148, 158, 0.15)',
+                  color: modelStatus?.all_ready ? COLORS.accentGreen : COLORS.textSecondary,
+                  border: `1px solid ${modelStatus?.all_ready ? 'rgba(0, 255, 65, 0.3)' : COLORS.border}`
+                }}
               >
-                {modelStatus?.all_ready ? "Models Ready" : "Models Not Trained"}
+                {modelStatus?.all_ready ? "● MODELS READY" : "○ NOT TRAINED"}
               </Badge>
               <Select value={selectedScenario} onValueChange={setSelectedScenario}>
-                <SelectTrigger data-testid="scenario-selector" className="w-48 bg-slate-800 border-slate-700">
+                <SelectTrigger 
+                  data-testid="scenario-selector" 
+                  className="w-52 font-mono text-sm"
+                  style={{ backgroundColor: COLORS.bgElevated, borderColor: COLORS.border, color: COLORS.textPrimary }}
+                >
                   <SelectValue placeholder="Select Scenario" />
                 </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="baseline">📈 Baseline</SelectItem>
-                  <SelectItem value="adverse">⚠️ Adverse</SelectItem>
-                  <SelectItem value="severely_adverse">🔴 Severely Adverse</SelectItem>
-                  <SelectItem value="custom">🎛️ Custom Black Swan</SelectItem>
+                <SelectContent style={{ backgroundColor: COLORS.bgSurface, borderColor: COLORS.border }}>
+                  <SelectItem value="baseline">BASELINE</SelectItem>
+                  <SelectItem value="adverse">ADVERSE</SelectItem>
+                  <SelectItem value="severely_adverse">SEVERELY ADVERSE</SelectItem>
+                  <SelectItem value="custom">CUSTOM BLACK SWAN</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -258,65 +268,67 @@ function App() {
 
       <main className="container mx-auto px-6 py-8">
         <Tabs defaultValue="data" className="space-y-8">
-          <TabsList className="bg-slate-800/50 p-1 rounded-xl">
-            <TabsTrigger data-testid="tab-data" value="data" className="data-[state=active]:bg-blue-600">
+          <TabsList className="p-1 rounded-lg" style={{ backgroundColor: COLORS.bgSurface, borderColor: COLORS.border }}>
+            <TabsTrigger data-testid="tab-data" value="data" className="font-mono text-sm px-4">
               <Database className="w-4 h-4 mr-2" />
-              Data Ingestion
+              DATA
             </TabsTrigger>
-            <TabsTrigger data-testid="tab-model" value="model" className="data-[state=active]:bg-blue-600">
+            <TabsTrigger data-testid="tab-model" value="model" className="font-mono text-sm px-4">
               <Brain className="w-4 h-4 mr-2" />
-              Model Training
+              MODEL
             </TabsTrigger>
-            <TabsTrigger data-testid="tab-forecast" value="forecast" className="data-[state=active]:bg-blue-600">
+            <TabsTrigger data-testid="tab-forecast" value="forecast" className="font-mono text-sm px-4">
               <TrendingDown className="w-4 h-4 mr-2" />
-              Capital Forecast
+              FORECAST
             </TabsTrigger>
-            <TabsTrigger data-testid="tab-explain" value="explain" className="data-[state=active]:bg-blue-600">
+            <TabsTrigger data-testid="tab-explain" value="explain" className="font-mono text-sm px-4">
               <Zap className="w-4 h-4 mr-2" />
-              Explainability
+              EXPLAIN
             </TabsTrigger>
-            <TabsTrigger data-testid="tab-reports" value="reports" className="data-[state=active]:bg-blue-600">
+            <TabsTrigger data-testid="tab-reports" value="reports" className="font-mono text-sm px-4">
               <FileText className="w-4 h-4 mr-2" />
-              Reports
+              REPORTS
             </TabsTrigger>
           </TabsList>
 
           {/* Data Ingestion Tab */}
           <TabsContent data-testid="data-tab-content" value="data" className="space-y-6">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {/* Bank Data Card */}
-              <Card className="bg-slate-900/50 border-slate-800">
+              <Card style={{ backgroundColor: COLORS.bgSurface, borderColor: COLORS.border }}>
                 <CardHeader>
-                  <CardTitle className="text-white flex items-center gap-2">
-                    <Building2 className="w-5 h-5 text-blue-400" />
-                    Bank Portfolio Data
+                  <CardTitle className="flex items-center gap-2" style={{ color: COLORS.textPrimary }}>
+                    <Building2 className="w-5 h-5" style={{ color: COLORS.accentCyan }} />
+                    BANK PORTFOLIO DATA
                   </CardTitle>
-                  <CardDescription>Generate synthetic or upload custom bank data</CardDescription>
+                  <CardDescription style={{ color: COLORS.textSecondary }}>
+                    Generate synthetic or upload custom bank data
+                  </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <Button 
                     data-testid="generate-banks-btn"
                     onClick={generateSyntheticBanks}
                     disabled={loading.banks}
-                    className="w-full bg-blue-600 hover:bg-blue-700"
+                    className="w-full font-mono"
+                    style={{ backgroundColor: COLORS.accentCyan, color: COLORS.bgPrimary }}
                   >
                     {loading.banks ? <RefreshCw className="w-4 h-4 mr-2 animate-spin" /> : <Database className="w-4 h-4 mr-2" />}
-                    Generate Synthetic Banks
+                    GENERATE SYNTHETIC BANKS
                   </Button>
                   
                   {bankData.length > 0 && (
                     <div className="mt-4">
-                      <p className="text-sm text-slate-400 mb-2">
-                        Loaded {new Set(bankData.map(b => b.bank_id)).size} banks
+                      <p className="text-sm font-mono mb-2" style={{ color: COLORS.textSecondary }}>
+                        LOADED: {new Set(bankData.map(b => b.bank_id)).size} BANKS
                       </p>
-                      <ScrollArea className="h-48 rounded-md border border-slate-700">
+                      <ScrollArea className="h-48 rounded border" style={{ borderColor: COLORS.border }}>
                         <div className="p-4 space-y-2">
                           {[...new Set(bankData.map(b => b.bank_id))].slice(0, 5).map(bankId => {
                             const bank = bankData.find(b => b.bank_id === bankId);
                             return (
-                              <div key={bankId} className="flex justify-between text-sm">
-                                <span className="text-slate-300">{bank?.bank_name || bankId}</span>
-                                <span className="text-blue-400">
+                              <div key={bankId} className="flex justify-between text-sm font-mono">
+                                <span style={{ color: COLORS.textPrimary }}>{bank?.bank_name || bankId}</span>
+                                <span style={{ color: COLORS.accentCyan }}>
                                   CET1: {((bank?.cet1_ratio || 0) * 100).toFixed(1)}%
                                 </span>
                               </div>
@@ -329,48 +341,50 @@ function App() {
                 </CardContent>
               </Card>
 
-              {/* Macro Data Card */}
-              <Card className="bg-slate-900/50 border-slate-800">
+              <Card style={{ backgroundColor: COLORS.bgSurface, borderColor: COLORS.border }}>
                 <CardHeader>
-                  <CardTitle className="text-white flex items-center gap-2">
-                    <Activity className="w-5 h-5 text-cyan-400" />
-                    Macroeconomic Data (FRED)
+                  <CardTitle className="flex items-center gap-2" style={{ color: COLORS.textPrimary }}>
+                    <Activity className="w-5 h-5" style={{ color: COLORS.accentCyan }} />
+                    MACROECONOMIC DATA (FRED)
                   </CardTitle>
-                  <CardDescription>Real-time economic indicators</CardDescription>
+                  <CardDescription style={{ color: COLORS.textSecondary }}>
+                    Real-time economic indicators
+                  </CardDescription>
                 </CardHeader>
                 <CardContent>
                   <Button 
                     data-testid="fetch-macro-btn"
                     onClick={fetchCurrentMacro}
-                    className="w-full bg-cyan-600 hover:bg-cyan-700 mb-4"
+                    className="w-full font-mono mb-4"
+                    style={{ backgroundColor: COLORS.accentCyan, color: COLORS.bgPrimary }}
                   >
                     <RefreshCw className="w-4 h-4 mr-2" />
-                    Refresh FRED Data
+                    REFRESH FRED DATA
                   </Button>
                   
                   {currentConditions && (
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="p-3 bg-slate-800 rounded-lg">
-                        <p className="text-xs text-slate-400">Unemployment</p>
-                        <p className="text-xl font-bold text-white">
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="p-3 rounded" style={{ backgroundColor: COLORS.bgElevated, borderLeft: `3px solid ${COLORS.accentCyan}` }}>
+                        <p className="text-xs font-mono" style={{ color: COLORS.textSecondary }}>UNEMPLOYMENT</p>
+                        <p className="text-xl font-bold font-mono" style={{ color: COLORS.textPrimary }}>
                           {currentConditions.unemployment_rate?.toFixed(1)}%
                         </p>
                       </div>
-                      <div className="p-3 bg-slate-800 rounded-lg">
-                        <p className="text-xs text-slate-400">Fed Funds</p>
-                        <p className="text-xl font-bold text-white">
+                      <div className="p-3 rounded" style={{ backgroundColor: COLORS.bgElevated, borderLeft: `3px solid ${COLORS.accentCyan}` }}>
+                        <p className="text-xs font-mono" style={{ color: COLORS.textSecondary }}>FED FUNDS</p>
+                        <p className="text-xl font-bold font-mono" style={{ color: COLORS.textPrimary }}>
                           {currentConditions.fed_funds_rate?.toFixed(2)}%
                         </p>
                       </div>
-                      <div className="p-3 bg-slate-800 rounded-lg">
-                        <p className="text-xs text-slate-400">VIX</p>
-                        <p className="text-xl font-bold text-white">
+                      <div className="p-3 rounded" style={{ backgroundColor: COLORS.bgElevated, borderLeft: `3px solid ${COLORS.accentYellow}` }}>
+                        <p className="text-xs font-mono" style={{ color: COLORS.textSecondary }}>VIX</p>
+                        <p className="text-xl font-bold font-mono" style={{ color: COLORS.textPrimary }}>
                           {currentConditions.vix?.toFixed(1)}
                         </p>
                       </div>
-                      <div className="p-3 bg-slate-800 rounded-lg">
-                        <p className="text-xs text-slate-400">Yield Spread</p>
-                        <p className={`text-xl font-bold ${currentConditions.yield_curve_spread < 0 ? 'text-red-400' : 'text-green-400'}`}>
+                      <div className="p-3 rounded" style={{ backgroundColor: COLORS.bgElevated, borderLeft: `3px solid ${currentConditions.yield_curve_spread < 0 ? COLORS.accentRed : COLORS.accentGreen}` }}>
+                        <p className="text-xs font-mono" style={{ color: COLORS.textSecondary }}>YIELD SPREAD</p>
+                        <p className="text-xl font-bold font-mono" style={{ color: currentConditions.yield_curve_spread < 0 ? COLORS.accentRed : COLORS.accentGreen }}>
                           {currentConditions.yield_curve_spread?.toFixed(2)}%
                         </p>
                       </div>
@@ -380,35 +394,34 @@ function App() {
               </Card>
             </div>
 
-            {/* Scenario Info */}
             {selectedScenario && scenarios[selectedScenario] && (
-              <Card className="bg-gradient-to-r from-slate-900 to-slate-800 border-blue-800/50">
+              <Card style={{ backgroundColor: COLORS.bgSurface, borderColor: COLORS.accentCyan, borderWidth: '1px' }}>
                 <CardContent className="p-6">
                   <div className="flex items-center justify-between">
                     <div>
-                      <h3 className="text-lg font-semibold text-white">
-                        {scenarios[selectedScenario].name} Scenario
+                      <h3 className="text-lg font-bold font-mono" style={{ color: COLORS.accentCyan }}>
+                        {scenarios[selectedScenario].name.toUpperCase()} SCENARIO
                       </h3>
-                      <p className="text-slate-400">{scenarios[selectedScenario].description}</p>
+                      <p style={{ color: COLORS.textSecondary }}>{scenarios[selectedScenario].description}</p>
                     </div>
-                    <div className="flex gap-6 text-center">
+                    <div className="flex gap-8 text-center">
                       <div>
-                        <p className="text-2xl font-bold text-red-400">
+                        <p className="text-2xl font-bold font-mono" style={{ color: COLORS.accentRed }}>
                           {scenarios[selectedScenario].unemployment_peak}%
                         </p>
-                        <p className="text-xs text-slate-500">Unemployment Peak</p>
+                        <p className="text-xs font-mono" style={{ color: COLORS.textSecondary }}>UNEMP PEAK</p>
                       </div>
                       <div>
-                        <p className="text-2xl font-bold text-amber-400">
+                        <p className="text-2xl font-bold font-mono" style={{ color: COLORS.accentYellow }}>
                           {scenarios[selectedScenario].vix_peak}
                         </p>
-                        <p className="text-xs text-slate-500">VIX Peak</p>
+                        <p className="text-xs font-mono" style={{ color: COLORS.textSecondary }}>VIX PEAK</p>
                       </div>
                       <div>
-                        <p className="text-2xl font-bold text-emerald-400">
+                        <p className="text-2xl font-bold font-mono" style={{ color: COLORS.accentGreen }}>
                           {scenarios[selectedScenario].hpi_decline}%
                         </p>
-                        <p className="text-xs text-slate-500">HPI Decline</p>
+                        <p className="text-xs font-mono" style={{ color: COLORS.textSecondary }}>HPI DECLINE</p>
                       </div>
                     </div>
                   </div>
@@ -420,15 +433,16 @@ function App() {
           {/* Model Training Tab */}
           <TabsContent data-testid="model-tab-content" value="model" className="space-y-6">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {/* LSTM Config */}
-              <Card className="bg-slate-900/50 border-slate-800">
+              <Card style={{ backgroundColor: COLORS.bgSurface, borderColor: COLORS.border }}>
                 <CardHeader>
-                  <CardTitle className="text-white">🔄 LSTM Configuration</CardTitle>
-                  <CardDescription>Temporal model for interest rate path dependency</CardDescription>
+                  <CardTitle style={{ color: COLORS.textPrimary }}>LSTM CONFIGURATION</CardTitle>
+                  <CardDescription style={{ color: COLORS.textSecondary }}>Temporal model for interest rate paths</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
                   <div>
-                    <label className="text-sm text-slate-400">LSTM Units: {trainingConfig.lstm_units}</label>
+                    <label className="text-sm font-mono" style={{ color: COLORS.textSecondary }}>
+                      LSTM UNITS: <span style={{ color: COLORS.accentCyan }}>{trainingConfig.lstm_units}</span>
+                    </label>
                     <Slider
                       data-testid="lstm-units-slider"
                       value={[trainingConfig.lstm_units]}
@@ -440,7 +454,9 @@ function App() {
                     />
                   </div>
                   <div>
-                    <label className="text-sm text-slate-400">Dropout Rate: {trainingConfig.lstm_dropout}</label>
+                    <label className="text-sm font-mono" style={{ color: COLORS.textSecondary }}>
+                      DROPOUT: <span style={{ color: COLORS.accentCyan }}>{trainingConfig.lstm_dropout}</span>
+                    </label>
                     <Slider
                       value={[trainingConfig.lstm_dropout * 100]}
                       onValueChange={([v]) => setTrainingConfig(prev => ({ ...prev, lstm_dropout: v / 100 }))}
@@ -451,7 +467,9 @@ function App() {
                     />
                   </div>
                   <div>
-                    <label className="text-sm text-slate-400">Training Epochs: {trainingConfig.lstm_epochs}</label>
+                    <label className="text-sm font-mono" style={{ color: COLORS.textSecondary }}>
+                      EPOCHS: <span style={{ color: COLORS.accentCyan }}>{trainingConfig.lstm_epochs}</span>
+                    </label>
                     <Slider
                       value={[trainingConfig.lstm_epochs]}
                       onValueChange={([v]) => setTrainingConfig(prev => ({ ...prev, lstm_epochs: v }))}
@@ -464,15 +482,16 @@ function App() {
                 </CardContent>
               </Card>
 
-              {/* XGBoost Config */}
-              <Card className="bg-slate-900/50 border-slate-800">
+              <Card style={{ backgroundColor: COLORS.bgSurface, borderColor: COLORS.border }}>
                 <CardHeader>
-                  <CardTitle className="text-white">🌲 XGBoost Configuration</CardTitle>
-                  <CardDescription>Gradient boosting for static risk factors</CardDescription>
+                  <CardTitle style={{ color: COLORS.textPrimary }}>XGBOOST CONFIGURATION</CardTitle>
+                  <CardDescription style={{ color: COLORS.textSecondary }}>Gradient boosting for static risk factors</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
                   <div>
-                    <label className="text-sm text-slate-400">N Estimators: {trainingConfig.xgb_estimators}</label>
+                    <label className="text-sm font-mono" style={{ color: COLORS.textSecondary }}>
+                      ESTIMATORS: <span style={{ color: COLORS.accentCyan }}>{trainingConfig.xgb_estimators}</span>
+                    </label>
                     <Slider
                       data-testid="xgb-estimators-slider"
                       value={[trainingConfig.xgb_estimators]}
@@ -484,7 +503,9 @@ function App() {
                     />
                   </div>
                   <div>
-                    <label className="text-sm text-slate-400">Max Depth: {trainingConfig.xgb_depth}</label>
+                    <label className="text-sm font-mono" style={{ color: COLORS.textSecondary }}>
+                      MAX DEPTH: <span style={{ color: COLORS.accentCyan }}>{trainingConfig.xgb_depth}</span>
+                    </label>
                     <Slider
                       value={[trainingConfig.xgb_depth]}
                       onValueChange={([v]) => setTrainingConfig(prev => ({ ...prev, xgb_depth: v }))}
@@ -495,7 +516,9 @@ function App() {
                     />
                   </div>
                   <div>
-                    <label className="text-sm text-slate-400">Learning Rate: {trainingConfig.xgb_learning_rate}</label>
+                    <label className="text-sm font-mono" style={{ color: COLORS.textSecondary }}>
+                      LEARNING RATE: <span style={{ color: COLORS.accentCyan }}>{trainingConfig.xgb_learning_rate}</span>
+                    </label>
                     <Slider
                       value={[trainingConfig.xgb_learning_rate * 100]}
                       onValueChange={([v]) => setTrainingConfig(prev => ({ ...prev, xgb_learning_rate: v / 100 }))}
@@ -509,17 +532,16 @@ function App() {
               </Card>
             </div>
 
-            {/* Training Button & Progress */}
-            <Card className="bg-slate-900/50 border-slate-800">
+            <Card style={{ backgroundColor: COLORS.bgSurface, borderColor: COLORS.border }}>
               <CardContent className="p-6">
                 <div className="space-y-4">
                   {trainingProgress > 0 && (
                     <div className="space-y-2">
-                      <div className="flex justify-between text-sm">
-                        <span className="text-slate-400">Training Progress</span>
-                        <span className="text-blue-400">{trainingProgress}%</span>
+                      <div className="flex justify-between text-sm font-mono">
+                        <span style={{ color: COLORS.textSecondary }}>TRAINING PROGRESS</span>
+                        <span style={{ color: COLORS.accentCyan }}>{trainingProgress}%</span>
                       </div>
-                      <Progress value={trainingProgress} className="h-2" />
+                      <Progress value={trainingProgress} className="h-2" style={{ backgroundColor: COLORS.bgElevated }} />
                     </div>
                   )}
                   
@@ -527,17 +549,18 @@ function App() {
                     data-testid="train-models-btn"
                     onClick={trainModels}
                     disabled={loading.training}
-                    className="w-full bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 h-12 text-lg"
+                    className="w-full h-14 text-lg font-mono font-bold"
+                    style={{ backgroundColor: COLORS.accentCyan, color: COLORS.bgPrimary }}
                   >
                     {loading.training ? (
                       <>
                         <RefreshCw className="w-5 h-5 mr-2 animate-spin" />
-                        Training Ensemble Model...
+                        TRAINING ENSEMBLE MODEL...
                       </>
                     ) : (
                       <>
                         <Play className="w-5 h-5 mr-2" />
-                        Train LSTM-XGBoost Ensemble
+                        TRAIN LSTM-XGBOOST ENSEMBLE
                       </>
                     )}
                   </Button>
@@ -545,22 +568,22 @@ function App() {
 
                 {modelStatus?.all_ready && modelStatus?.feature_importance && (
                   <div className="mt-6">
-                    <h4 className="text-sm font-medium text-slate-300 mb-3">Feature Importance</h4>
+                    <h4 className="text-sm font-mono mb-3" style={{ color: COLORS.textSecondary }}>FEATURE IMPORTANCE</h4>
                     <div className="space-y-2">
                       {Object.entries(modelStatus.feature_importance)
                         .sort(([,a], [,b]) => b - a)
                         .map(([feature, importance]) => (
                           <div key={feature} className="flex items-center gap-2">
-                            <span className="text-xs text-slate-400 w-32 truncate">
-                              {feature.replace(/_/g, ' ')}
+                            <span className="text-xs font-mono w-36 truncate" style={{ color: COLORS.textSecondary }}>
+                              {feature.toUpperCase().replace(/_/g, ' ')}
                             </span>
-                            <div className="flex-1 h-2 bg-slate-700 rounded-full overflow-hidden">
+                            <div className="flex-1 h-2 rounded" style={{ backgroundColor: COLORS.bgElevated }}>
                               <div 
-                                className="h-full bg-gradient-to-r from-blue-500 to-cyan-500 rounded-full"
-                                style={{ width: `${importance * 100}%` }}
+                                className="h-full rounded"
+                                style={{ width: `${importance * 100}%`, backgroundColor: COLORS.accentCyan }}
                               />
                             </div>
-                            <span className="text-xs text-slate-500 w-12 text-right">
+                            <span className="text-xs font-mono w-12 text-right" style={{ color: COLORS.accentCyan }}>
                               {(importance * 100).toFixed(1)}%
                             </span>
                           </div>
@@ -578,116 +601,112 @@ function App() {
               data-testid="run-forecast-btn"
               onClick={runForecast}
               disabled={loading.forecast}
-              className="w-full bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 h-14 text-lg"
+              className="w-full h-16 text-lg font-mono font-bold"
+              style={{ backgroundColor: COLORS.accentGreen, color: COLORS.bgPrimary }}
             >
               {loading.forecast ? (
                 <>
                   <RefreshCw className="w-5 h-5 mr-2 animate-spin" />
-                  Running 9-Quarter Forecast...
+                  RUNNING 9-QUARTER FORECAST...
                 </>
               ) : (
                 <>
                   <TrendingDown className="w-5 h-5 mr-2" />
-                  Run Capital Erosion Forecast
+                  RUN CAPITAL EROSION FORECAST
                 </>
               )}
             </Button>
 
             {metrics && (
               <>
-                {/* Key Metrics */}
                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                  <Card className={`bg-slate-900/50 border-l-4 ${metrics.minCet1 > 7 ? 'border-emerald-500' : metrics.minCet1 > 4.5 ? 'border-amber-500' : 'border-red-500'}`}>
+                  <Card style={{ backgroundColor: COLORS.bgSurface, borderLeft: `4px solid ${metrics.minCet1 > 7 ? COLORS.accentGreen : metrics.minCet1 > 4.5 ? COLORS.accentYellow : COLORS.accentRed}` }}>
                     <CardContent className="p-4">
-                      <p className="text-xs text-slate-400 uppercase tracking-wide">Minimum CET1</p>
-                      <p className={`text-3xl font-bold font-mono ${metrics.minCet1 > 7 ? 'text-emerald-400' : metrics.minCet1 > 4.5 ? 'text-amber-400' : 'text-red-400'}`}>
+                      <p className="text-xs font-mono" style={{ color: COLORS.textSecondary }}>MINIMUM CET1</p>
+                      <p className="text-3xl font-bold font-mono" style={{ color: metrics.minCet1 > 7 ? COLORS.accentGreen : metrics.minCet1 > 4.5 ? COLORS.accentYellow : COLORS.accentRed }}>
                         {metrics.minCet1.toFixed(1)}%
                       </p>
                     </CardContent>
                   </Card>
                   
-                  <Card className="bg-slate-900/50 border-l-4 border-amber-500">
+                  <Card style={{ backgroundColor: COLORS.bgSurface, borderLeft: `4px solid ${COLORS.accentYellow}` }}>
                     <CardContent className="p-4">
-                      <p className="text-xs text-slate-400 uppercase tracking-wide">Capital Decline</p>
-                      <p className="text-3xl font-bold font-mono text-amber-400">
+                      <p className="text-xs font-mono" style={{ color: COLORS.textSecondary }}>CAPITAL DECLINE</p>
+                      <p className="text-3xl font-bold font-mono" style={{ color: COLORS.accentYellow }}>
                         {metrics.decline.toFixed(1)}%
                       </p>
                     </CardContent>
                   </Card>
                   
-                  <Card className={`bg-slate-900/50 border-l-4 ${metrics.breachRate === 0 ? 'border-emerald-500' : metrics.breachRate < 30 ? 'border-amber-500' : 'border-red-500'}`}>
+                  <Card style={{ backgroundColor: COLORS.bgSurface, borderLeft: `4px solid ${metrics.breachRate === 0 ? COLORS.accentGreen : metrics.breachRate < 30 ? COLORS.accentYellow : COLORS.accentRed}` }}>
                     <CardContent className="p-4">
-                      <p className="text-xs text-slate-400 uppercase tracking-wide">Banks Breaching</p>
-                      <p className={`text-3xl font-bold font-mono ${metrics.breachRate === 0 ? 'text-emerald-400' : metrics.breachRate < 30 ? 'text-amber-400' : 'text-red-400'}`}>
+                      <p className="text-xs font-mono" style={{ color: COLORS.textSecondary }}>BANKS BREACHING</p>
+                      <p className="text-3xl font-bold font-mono" style={{ color: metrics.breachRate === 0 ? COLORS.accentGreen : metrics.breachRate < 30 ? COLORS.accentYellow : COLORS.accentRed }}>
                         {metrics.breachCount}/{metrics.totalBanks}
                       </p>
                     </CardContent>
                   </Card>
                   
-                  <Card className="bg-slate-900/50 border-l-4 border-red-500">
+                  <Card style={{ backgroundColor: COLORS.bgSurface, borderLeft: `4px solid ${COLORS.accentRed}` }}>
                     <CardContent className="p-4">
-                      <p className="text-xs text-slate-400 uppercase tracking-wide">Total Losses</p>
-                      <p className="text-3xl font-bold font-mono text-red-400">
+                      <p className="text-xs font-mono" style={{ color: COLORS.textSecondary }}>TOTAL LOSSES</p>
+                      <p className="text-3xl font-bold font-mono" style={{ color: COLORS.accentRed }}>
                         ${metrics.totalLosses.toFixed(1)}B
                       </p>
                     </CardContent>
                   </Card>
                 </div>
 
-                {/* Breach Alert */}
                 {metrics.breachCount > 0 && (
-                  <Alert data-testid="breach-alert" className="bg-red-950/50 border-red-800">
-                    <AlertTriangle className="h-5 w-5 text-red-400" />
-                    <AlertTitle className="text-red-300">Capital Breach Alert</AlertTitle>
-                    <AlertDescription className="text-red-200">
+                  <Alert data-testid="breach-alert" className="pulse-alert" style={{ backgroundColor: 'rgba(255, 49, 49, 0.1)', borderColor: COLORS.accentRed }}>
+                    <AlertTriangle className="h-5 w-5" style={{ color: COLORS.accentRed }} />
+                    <AlertTitle className="font-mono" style={{ color: COLORS.accentRed }}>⚠ CAPITAL BREACH ALERT</AlertTitle>
+                    <AlertDescription style={{ color: COLORS.textPrimary }}>
                       {metrics.breachCount} of {metrics.totalBanks} banks projected to breach CET1 minimum. 
                       Immediate supervisory review recommended per SR 11-7.
                     </AlertDescription>
                   </Alert>
                 )}
 
-                {/* Charts */}
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                  {/* CET1 Trajectory */}
-                  <Card className="bg-slate-900/50 border-slate-800">
+                  <Card style={{ backgroundColor: COLORS.bgSurface, borderColor: COLORS.border }}>
                     <CardHeader>
-                      <CardTitle className="text-white">CET1 Capital Erosion Map</CardTitle>
+                      <CardTitle className="font-mono" style={{ color: COLORS.textPrimary }}>CET1 CAPITAL EROSION MAP</CardTitle>
                     </CardHeader>
                     <CardContent>
                       <ResponsiveContainer width="100%" height={300}>
                         <AreaChart data={getTrajectoryData()}>
                           <defs>
                             <linearGradient id="cet1Gradient" x1="0" y1="0" x2="0" y2="1">
-                              <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3}/>
-                              <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
+                              <stop offset="5%" stopColor={COLORS.accentCyan} stopOpacity={0.3}/>
+                              <stop offset="95%" stopColor={COLORS.accentCyan} stopOpacity={0}/>
                             </linearGradient>
                           </defs>
-                          <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
-                          <XAxis dataKey="quarter" stroke="#94a3b8" />
-                          <YAxis stroke="#94a3b8" domain={[0, 'auto']} />
+                          <CartesianGrid strokeDasharray="3 3" stroke={COLORS.border} />
+                          <XAxis dataKey="quarter" stroke={COLORS.textSecondary} />
+                          <YAxis stroke={COLORS.textSecondary} domain={[0, 'auto']} />
                           <Tooltip 
-                            contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #334155' }}
-                            labelStyle={{ color: '#f8fafc' }}
+                            contentStyle={{ backgroundColor: COLORS.bgSurface, border: `1px solid ${COLORS.border}` }}
+                            labelStyle={{ color: COLORS.textPrimary }}
                           />
                           <Area 
                             type="monotone" 
                             dataKey="avgCet1" 
-                            stroke="#3b82f6" 
+                            stroke={COLORS.accentCyan} 
                             fill="url(#cet1Gradient)"
                             strokeWidth={2}
                           />
                           <Line 
                             type="monotone" 
                             dataKey="minCet1" 
-                            stroke="#ef4444" 
+                            stroke={COLORS.accentRed} 
                             strokeDasharray="5 5"
                             dot={false}
                           />
-                          {/* Regulatory minimum line */}
                           <Line
                             type="monotone"
                             dataKey={() => 7}
-                            stroke="#f59e0b"
+                            stroke={COLORS.accentYellow}
                             strokeDasharray="3 3"
                             dot={false}
                           />
@@ -696,25 +715,24 @@ function App() {
                     </CardContent>
                   </Card>
 
-                  {/* Macro Scenario */}
-                  <Card className="bg-slate-900/50 border-slate-800">
+                  <Card style={{ backgroundColor: COLORS.bgSurface, borderColor: COLORS.border }}>
                     <CardHeader>
-                      <CardTitle className="text-white">Macro Stress Path</CardTitle>
+                      <CardTitle className="font-mono" style={{ color: COLORS.textPrimary }}>MACRO STRESS PATH</CardTitle>
                     </CardHeader>
                     <CardContent>
                       <ResponsiveContainer width="100%" height={300}>
                         <ComposedChart data={getScenarioData()}>
-                          <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
-                          <XAxis dataKey="quarter" stroke="#94a3b8" />
-                          <YAxis yAxisId="left" stroke="#94a3b8" />
-                          <YAxis yAxisId="right" orientation="right" stroke="#94a3b8" />
+                          <CartesianGrid strokeDasharray="3 3" stroke={COLORS.border} />
+                          <XAxis dataKey="quarter" stroke={COLORS.textSecondary} />
+                          <YAxis yAxisId="left" stroke={COLORS.textSecondary} />
+                          <YAxis yAxisId="right" orientation="right" stroke={COLORS.textSecondary} />
                           <Tooltip 
-                            contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #334155' }}
+                            contentStyle={{ backgroundColor: COLORS.bgSurface, border: `1px solid ${COLORS.border}` }}
                           />
                           <Legend />
-                          <Bar yAxisId="left" dataKey="unemployment" fill="#ef4444" name="Unemployment %" />
-                          <Line yAxisId="right" type="monotone" dataKey="vix" stroke="#f59e0b" name="VIX" strokeWidth={2} />
-                          <Line yAxisId="left" type="monotone" dataKey="fedFunds" stroke="#22c55e" name="Fed Funds %" strokeWidth={2} />
+                          <Bar yAxisId="left" dataKey="unemployment" fill={COLORS.accentRed} name="Unemployment %" />
+                          <Line yAxisId="right" type="monotone" dataKey="vix" stroke={COLORS.accentYellow} name="VIX" strokeWidth={2} />
+                          <Line yAxisId="left" type="monotone" dataKey="fedFunds" stroke={COLORS.accentGreen} name="Fed Funds %" strokeWidth={2} />
                         </ComposedChart>
                       </ResponsiveContainer>
                     </CardContent>
@@ -727,42 +745,42 @@ function App() {
           {/* Explainability Tab */}
           <TabsContent data-testid="explain-tab-content" value="explain" className="space-y-6">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {/* SHAP Analysis */}
-              <Card className="bg-slate-900/50 border-slate-800">
+              <Card style={{ backgroundColor: COLORS.bgSurface, borderColor: COLORS.border }}>
                 <CardHeader>
-                  <CardTitle className="text-white flex items-center gap-2">
-                    <Zap className="w-5 h-5 text-purple-400" />
-                    Global Feature Importance (SHAP)
+                  <CardTitle className="flex items-center gap-2 font-mono" style={{ color: COLORS.textPrimary }}>
+                    <Zap className="w-5 h-5" style={{ color: COLORS.accentCyan }} />
+                    GLOBAL FEATURE IMPORTANCE (SHAP)
                   </CardTitle>
-                  <CardDescription>SR 11-7 Model Risk Management Compliance</CardDescription>
+                  <CardDescription style={{ color: COLORS.textSecondary }}>SR 11-7 Model Risk Management Compliance</CardDescription>
                 </CardHeader>
                 <CardContent>
                   <Button 
                     data-testid="compute-shap-btn"
                     onClick={fetchShapExplanation}
                     disabled={loading.shap || !modelStatus?.all_ready}
-                    className="w-full bg-purple-600 hover:bg-purple-700 mb-4"
+                    className="w-full font-mono mb-4"
+                    style={{ backgroundColor: COLORS.accentCyan, color: COLORS.bgPrimary }}
                   >
                     {loading.shap ? <RefreshCw className="w-4 h-4 mr-2 animate-spin" /> : <Zap className="w-4 h-4 mr-2" />}
-                    Compute SHAP Values
+                    COMPUTE SHAP VALUES
                   </Button>
                   
                   {shapExplanation && (
                     <div className="space-y-3">
                       {Object.entries(shapExplanation.global_importance)
                         .sort(([,a], [,b]) => b - a)
-                        .map(([feature, importance], idx) => {
+                        .map(([feature, importance]) => {
                           const pct = (importance / Object.values(shapExplanation.global_importance).reduce((a,b) => a+b, 0)) * 100;
                           return (
                             <div key={feature}>
-                              <div className="flex justify-between text-sm mb-1">
-                                <span className="text-slate-300">{feature.replace(/_/g, ' ')}</span>
-                                <span className="text-purple-400">{pct.toFixed(1)}%</span>
+                              <div className="flex justify-between text-sm font-mono mb-1">
+                                <span style={{ color: COLORS.textPrimary }}>{feature.toUpperCase().replace(/_/g, ' ')}</span>
+                                <span style={{ color: COLORS.accentCyan }}>{pct.toFixed(1)}%</span>
                               </div>
-                              <div className="h-2 bg-slate-700 rounded-full overflow-hidden">
+                              <div className="h-2 rounded" style={{ backgroundColor: COLORS.bgElevated }}>
                                 <div 
-                                  className="h-full bg-gradient-to-r from-purple-500 to-pink-500 rounded-full transition-all duration-500"
-                                  style={{ width: `${pct}%` }}
+                                  className="h-full rounded transition-all duration-500"
+                                  style={{ width: `${pct}%`, backgroundColor: COLORS.accentCyan }}
                                 />
                               </div>
                             </div>
@@ -773,29 +791,29 @@ function App() {
                 </CardContent>
               </Card>
 
-              {/* AI Explanation */}
-              <Card className="bg-slate-900/50 border-slate-800">
+              <Card style={{ backgroundColor: COLORS.bgSurface, borderColor: COLORS.border }}>
                 <CardHeader>
-                  <CardTitle className="text-white flex items-center gap-2">
-                    <Brain className="w-5 h-5 text-cyan-400" />
-                    AI-Powered Analysis (Gemini 3 Flash)
+                  <CardTitle className="flex items-center gap-2 font-mono" style={{ color: COLORS.textPrimary }}>
+                    <Brain className="w-5 h-5" style={{ color: COLORS.accentGreen }} />
+                    AI-POWERED ANALYSIS (GEMINI)
                   </CardTitle>
-                  <CardDescription>Natural language interpretation of model results</CardDescription>
+                  <CardDescription style={{ color: COLORS.textSecondary }}>Natural language interpretation</CardDescription>
                 </CardHeader>
                 <CardContent>
                   <Button 
                     data-testid="generate-ai-explanation-btn"
                     onClick={fetchAiExplanation}
                     disabled={loading.ai || !modelStatus?.all_ready}
-                    className="w-full bg-cyan-600 hover:bg-cyan-700 mb-4"
+                    className="w-full font-mono mb-4"
+                    style={{ backgroundColor: COLORS.accentGreen, color: COLORS.bgPrimary }}
                   >
                     {loading.ai ? <RefreshCw className="w-4 h-4 mr-2 animate-spin" /> : <Brain className="w-4 h-4 mr-2" />}
-                    Generate AI Explanation
+                    GENERATE AI EXPLANATION
                   </Button>
                   
                   {aiExplanation && (
-                    <div className="p-4 bg-slate-800 rounded-lg border-l-4 border-cyan-500">
-                      <p className="text-slate-200 leading-relaxed whitespace-pre-wrap">
+                    <div className="p-4 rounded" style={{ backgroundColor: COLORS.bgElevated, borderLeft: `3px solid ${COLORS.accentGreen}` }}>
+                      <p className="leading-relaxed whitespace-pre-wrap" style={{ color: COLORS.textPrimary }}>
                         {aiExplanation}
                       </p>
                     </div>
@@ -804,11 +822,10 @@ function App() {
               </Card>
             </div>
 
-            {/* Compliance Note */}
-            <Alert className="bg-slate-800/50 border-slate-700">
-              <Shield className="h-5 w-5 text-blue-400" />
-              <AlertTitle className="text-slate-200">SR 11-7 Model Risk Management</AlertTitle>
-              <AlertDescription className="text-slate-400">
+            <Alert style={{ backgroundColor: COLORS.bgSurface, borderColor: COLORS.border }}>
+              <Shield className="h-5 w-5" style={{ color: COLORS.accentCyan }} />
+              <AlertTitle className="font-mono" style={{ color: COLORS.textPrimary }}>SR 11-7 MODEL RISK MANAGEMENT</AlertTitle>
+              <AlertDescription style={{ color: COLORS.textSecondary }}>
                 This analysis complies with Federal Reserve SR 11-7 guidelines for model risk management, 
                 providing transparent feature attribution and scenario-specific explanations for regulatory review.
               </AlertDescription>
@@ -818,15 +835,16 @@ function App() {
           {/* Reports Tab */}
           <TabsContent data-testid="reports-tab-content" value="reports" className="space-y-6">
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              <Card className="bg-slate-900/50 border-slate-800">
+              <Card style={{ backgroundColor: COLORS.bgSurface, borderColor: COLORS.border }}>
                 <CardHeader>
-                  <CardTitle className="text-white">CET1 Trajectory Report</CardTitle>
+                  <CardTitle className="font-mono" style={{ color: COLORS.textPrimary }}>CET1 TRAJECTORY</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <Button 
                     data-testid="download-trajectory-btn"
                     disabled={!forecastResults}
-                    className="w-full bg-blue-600 hover:bg-blue-700"
+                    className="w-full font-mono"
+                    style={{ backgroundColor: COLORS.accentCyan, color: COLORS.bgPrimary }}
                     onClick={() => {
                       if (forecastResults?.trajectory) {
                         const csv = Object.keys(forecastResults.trajectory[0]).join(',') + '\n' +
@@ -841,92 +859,99 @@ function App() {
                     }}
                   >
                     <Download className="w-4 h-4 mr-2" />
-                    Download CSV
+                    DOWNLOAD CSV
                   </Button>
                 </CardContent>
               </Card>
 
-              <Card className="bg-slate-900/50 border-slate-800">
+              <Card style={{ backgroundColor: COLORS.bgSurface, borderColor: COLORS.border }}>
                 <CardHeader>
-                  <CardTitle className="text-white">Executive Summary</CardTitle>
+                  <CardTitle className="font-mono" style={{ color: COLORS.textPrimary }}>EXECUTIVE SUMMARY</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <Button 
                     data-testid="download-summary-btn"
                     disabled={!forecastResults}
-                    className="w-full bg-emerald-600 hover:bg-emerald-700"
+                    className="w-full font-mono"
+                    style={{ backgroundColor: COLORS.accentGreen, color: COLORS.bgPrimary }}
                   >
                     <Download className="w-4 h-4 mr-2" />
-                    Download PDF
+                    DOWNLOAD PDF
                   </Button>
                 </CardContent>
               </Card>
 
-              <Card className="bg-slate-900/50 border-slate-800">
+              <Card style={{ backgroundColor: COLORS.bgSurface, borderColor: COLORS.border }}>
                 <CardHeader>
-                  <CardTitle className="text-white">SHAP Analysis</CardTitle>
+                  <CardTitle className="font-mono" style={{ color: COLORS.textPrimary }}>SHAP ANALYSIS</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <Button 
                     data-testid="download-shap-btn"
                     disabled={!shapExplanation}
-                    className="w-full bg-purple-600 hover:bg-purple-700"
+                    className="w-full font-mono"
+                    style={{ backgroundColor: COLORS.accentYellow, color: COLORS.bgPrimary }}
                   >
                     <Download className="w-4 h-4 mr-2" />
-                    Download Report
+                    DOWNLOAD REPORT
                   </Button>
                 </CardContent>
               </Card>
             </div>
 
             {forecastResults?.trajectory && (
-              <Card className="bg-slate-900/50 border-slate-800">
+              <Card style={{ backgroundColor: COLORS.bgSurface, borderColor: COLORS.border }}>
                 <CardHeader>
-                  <CardTitle className="text-white">Bank-Level Results Summary</CardTitle>
+                  <CardTitle className="font-mono" style={{ color: COLORS.textPrimary }}>BANK-LEVEL RESULTS SUMMARY</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <ScrollArea className="h-96">
-                    <table className="w-full text-sm">
-                      <thead className="sticky top-0 bg-slate-800">
+                    <table className="w-full text-sm font-mono">
+                      <thead style={{ backgroundColor: COLORS.bgElevated }}>
                         <tr>
-                          <th className="text-left p-3 text-slate-400">Bank</th>
-                          <th className="text-right p-3 text-slate-400">Initial CET1</th>
-                          <th className="text-right p-3 text-slate-400">Min CET1</th>
-                          <th className="text-right p-3 text-slate-400">Final CET1</th>
-                          <th className="text-right p-3 text-slate-400">Total Losses</th>
-                          <th className="text-center p-3 text-slate-400">Breach</th>
+                          <th className="text-left p-3" style={{ color: COLORS.textSecondary }}>BANK</th>
+                          <th className="text-right p-3" style={{ color: COLORS.textSecondary }}>INITIAL CET1</th>
+                          <th className="text-right p-3" style={{ color: COLORS.textSecondary }}>MIN CET1</th>
+                          <th className="text-right p-3" style={{ color: COLORS.textSecondary }}>FINAL CET1</th>
+                          <th className="text-right p-3" style={{ color: COLORS.textSecondary }}>TOTAL LOSSES</th>
+                          <th className="text-center p-3" style={{ color: COLORS.textSecondary }}>STATUS</th>
                         </tr>
                       </thead>
                       <tbody>
                         {[...new Set(forecastResults.trajectory.map(t => t.bank_id))].map(bankId => {
-                          const bankData = forecastResults.trajectory.filter(t => t.bank_id === bankId);
-                          const initial = bankData.find(t => t.quarter === 1);
-                          const final = bankData.find(t => t.quarter === 9);
-                          const minCet1 = Math.min(...bankData.map(t => t.cet1_ratio));
-                          const totalLosses = bankData.reduce((sum, t) => sum + t.credit_losses, 0);
-                          const hasBreach = bankData.some(t => t.breach);
+                          const bankDataRow = forecastResults.trajectory.filter(t => t.bank_id === bankId);
+                          const initial = bankDataRow.find(t => t.quarter === 1);
+                          const final = bankDataRow.find(t => t.quarter === 9);
+                          const minCet1 = Math.min(...bankDataRow.map(t => t.cet1_ratio));
+                          const totalLosses = bankDataRow.reduce((sum, t) => sum + t.credit_losses, 0);
+                          const hasBreach = bankDataRow.some(t => t.breach);
                           
                           return (
-                            <tr key={bankId} className="border-t border-slate-700 hover:bg-slate-800/50">
-                              <td className="p-3 text-slate-300">{bankData[0]?.bank_name || bankId}</td>
-                              <td className="p-3 text-right text-slate-300">
+                            <tr key={bankId} style={{ borderBottom: `1px solid ${COLORS.border}` }}>
+                              <td className="p-3" style={{ color: COLORS.textPrimary }}>{bankDataRow[0]?.bank_name || bankId}</td>
+                              <td className="p-3 text-right" style={{ color: COLORS.textPrimary }}>
                                 {((initial?.cet1_ratio || 0) * 100).toFixed(2)}%
                               </td>
-                              <td className={`p-3 text-right ${minCet1 < 0.045 ? 'text-red-400' : minCet1 < 0.07 ? 'text-amber-400' : 'text-emerald-400'}`}>
+                              <td className="p-3 text-right" style={{ color: minCet1 < 0.045 ? COLORS.accentRed : minCet1 < 0.07 ? COLORS.accentYellow : COLORS.accentGreen }}>
                                 {(minCet1 * 100).toFixed(2)}%
                               </td>
-                              <td className="p-3 text-right text-slate-300">
+                              <td className="p-3 text-right" style={{ color: COLORS.textPrimary }}>
                                 {((final?.cet1_ratio || 0) * 100).toFixed(2)}%
                               </td>
-                              <td className="p-3 text-right text-red-400">
+                              <td className="p-3 text-right" style={{ color: COLORS.accentRed }}>
                                 ${(totalLosses / 1e9).toFixed(2)}B
                               </td>
                               <td className="p-3 text-center">
-                                {hasBreach ? (
-                                  <Badge className="bg-red-600">Breach</Badge>
-                                ) : (
-                                  <Badge className="bg-emerald-600">Safe</Badge>
-                                )}
+                                <Badge 
+                                  className="font-mono text-xs px-2 py-1"
+                                  style={{ 
+                                    backgroundColor: hasBreach ? 'rgba(255, 49, 49, 0.15)' : 'rgba(0, 255, 65, 0.15)',
+                                    color: hasBreach ? COLORS.accentRed : COLORS.accentGreen,
+                                    border: `1px solid ${hasBreach ? 'rgba(255, 49, 49, 0.3)' : 'rgba(0, 255, 65, 0.3)'}`
+                                  }}
+                                >
+                                  {hasBreach ? 'BREACH' : 'SAFE'}
+                                </Badge>
                               </td>
                             </tr>
                           );
@@ -941,11 +966,10 @@ function App() {
         </Tabs>
       </main>
 
-      {/* Footer */}
-      <footer className="border-t border-slate-800 py-6 mt-12">
-        <div className="container mx-auto px-6 text-center text-slate-500 text-sm">
-          <p>Reg-Explain | CCAR Framework 2026 | PPNR Stress-Testing via Hybrid LSTM-XGBoost with SHAP Interpretability</p>
-          <p className="mt-1">Compliant with SR 11-7 Model Risk Management Guidelines</p>
+      <footer className="py-6 mt-12" style={{ borderTop: `1px solid ${COLORS.border}` }}>
+        <div className="container mx-auto px-6 text-center font-mono text-sm" style={{ color: COLORS.textSecondary }}>
+          <p>REG-EXPLAIN | CCAR FRAMEWORK 2026 | PPNR STRESS-TESTING VIA HYBRID LSTM-XGBOOST</p>
+          <p className="mt-1" style={{ color: COLORS.textMuted }}>COMPLIANT WITH SR 11-7 MODEL RISK MANAGEMENT GUIDELINES</p>
         </div>
       </footer>
     </div>
