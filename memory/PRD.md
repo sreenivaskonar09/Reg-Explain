@@ -75,7 +75,8 @@ Frontend (React) → FastAPI Backend → MongoDB
 ```
 
 ## Next Tasks
-1. Implement custom scenario parameter persistence
-2. Add bank data CSV upload with validation
-3. Create executive summary PDF export
-4. Add model comparison dashboard
+1. Implement proactive alert system for CET1 threshold breaches
+2. Implement custom scenario parameter persistence
+3. Add bank data CSV upload with validation
+4. Create executive summary PDF export
+5. Add model comparison dashboard
