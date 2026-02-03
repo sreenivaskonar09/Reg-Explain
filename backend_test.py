@@ -11,7 +11,7 @@ from datetime import datetime
 from typing import Dict, Any, Optional
 
 class CCARAPITester:
-    def __init__(self, base_url="https://ppnr-forecast.preview.emergentagent.com"):
+    def __init__(self, base_url="https://cet1-tracker.preview.emergentagent.com"):
         self.base_url = base_url
         self.tests_run = 0
         self.tests_passed = 0
@@ -318,7 +318,7 @@ class CCARAPITester:
 def main():
     """Main test execution"""
     # Use the public endpoint from environment
-    api_url = "https://ppnr-forecast.preview.emergentagent.com"
+    api_url = "https://cet1-tracker.preview.emergentagent.com"
     
     print("🏛️ CCAR Stress Testing Framework - Backend API Tests")
     print(f"🌐 Target URL: {api_url}")
