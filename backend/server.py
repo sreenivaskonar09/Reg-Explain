@@ -315,9 +315,9 @@ async def train_models(config: TrainingConfig):
     
     return {
         "message": "Models trained successfully",
-        "lstm_weight": lstm_weight,
-        "xgb_weight": xgb_weight,
-        "feature_importance": xgb_model.get_feature_importance()
+        "lstm_weight": float(lstm_weight),
+        "xgb_weight": float(xgb_weight),
+        "feature_importance": convert_numpy_types(xgb_model.get_feature_importance())
     }
 
 
