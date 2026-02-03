@@ -50,6 +50,7 @@ Build a next-generation CCAR (Comprehensive Capital Analysis and Review) framewo
 - All critical features implemented ✅
 
 ### P1 (High Priority)
+- [ ] Proactive alert system (notifications when CET1 falls below threshold)
 - [ ] Custom Black Swan scenario builder
 - [ ] Multi-bank comparison views
 - [ ] Historical stress test result database
