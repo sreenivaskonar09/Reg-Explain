@@ -4,34 +4,43 @@
 @tailwind components;
 @tailwind utilities;
 
-@layer base {
-  :root {
-    --background: 222 47% 5%;
-    --foreground: 210 40% 98%;
-    --card: 222 47% 8%;
-    --card-foreground: 210 40% 98%;
-    --popover: 222 47% 8%;
-    --popover-foreground: 210 40% 98%;
-    --primary: 217 91% 60%;
-    --primary-foreground: 210 40% 98%;
-    --secondary: 217 33% 17%;
-    --secondary-foreground: 210 40% 98%;
-    --muted: 217 33% 17%;
-    --muted-foreground: 215 20% 65%;
-    --accent: 217 33% 17%;
-    --accent-foreground: 210 40% 98%;
-    --destructive: 0 84% 60%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 217 33% 17%;
-    --input: 217 33% 17%;
-    --ring: 217 91% 60%;
-    --radius: 0.5rem;
-    --chart-1: 220 70% 50%;
-    --chart-2: 160 60% 45%;
-    --chart-3: 30 80% 55%;
-    --chart-4: 280 65% 60%;
-    --chart-5: 340 75% 55%;
-  }
+/* Bloomberg Terminal Theme Variables */
+:root {
+  --bg-primary: #0A0E14;
+  --bg-surface: #161B22;
+  --bg-elevated: #1C2128;
+  --accent-primary: #00D1FF;
+  --accent-success: #00FF41;
+  --accent-danger: #FF3131;
+  --accent-warning: #FFB800;
+  --text-primary: #E6EDF3;
+  --text-secondary: #8B949E;
+  --text-muted: #6E7681;
+  --border-color: #30363D;
+  
+  --font-sans: 'IBM Plex Sans', system-ui, sans-serif;
+  --font-mono: 'IBM Plex Mono', monospace;
+  
+  --background: 210 50% 5%;
+  --foreground: 210 20% 93%;
+  --card: 215 28% 12%;
+  --card-foreground: 210 20% 93%;
+  --popover: 215 28% 12%;
+  --popover-foreground: 210 20% 93%;
+  --primary: 191 100% 50%;
+  --primary-foreground: 210 50% 5%;
+  --secondary: 215 14% 20%;
+  --secondary-foreground: 210 20% 93%;
+  --muted: 215 14% 20%;
+  --muted-foreground: 215 14% 55%;
+  --accent: 215 14% 20%;
+  --accent-foreground: 210 20% 93%;
+  --destructive: 0 100% 60%;
+  --destructive-foreground: 210 20% 93%;
+  --border: 215 14% 25%;
+  --input: 215 14% 20%;
+  --ring: 191 100% 50%;
+  --radius: 0.5rem;
 }
 
 @layer base {
@@ -40,6 +49,266 @@
   }
   body {
     @apply bg-background text-foreground;
-    font-family: 'IBM Plex Sans', system-ui, sans-serif;
+    font-family: var(--font-sans);
+    background-color: var(--bg-primary);
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background-color: #0A0E14;
+  color: #E6EDF3;
+  min-height: 100vh;
+}
+
+/* Custom scrollbar - Bloomberg style */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #0A0E14;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #30363D;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #00D1FF;
+}
+
+/* Card styles */
+.bloomberg-card {
+  background-color: #161B22;
+  border: 1px solid #30363D;
+  border-radius: 4px;
+}
+
+.bloomberg-card:hover {
+  border-color: #00D1FF;
+}
+
+/* Metric cards with glow effect */
+.metric-glow-cyan {
+  box-shadow: 0 0 20px rgba(0, 209, 255, 0.15);
+  border-left: 3px solid #00D1FF;
+}
+
+.metric-glow-green {
+  box-shadow: 0 0 20px rgba(0, 255, 65, 0.15);
+  border-left: 3px solid #00FF41;
+}
+
+.metric-glow-red {
+  box-shadow: 0 0 20px rgba(255, 49, 49, 0.15);
+  border-left: 3px solid #FF3131;
+}
+
+/* Neon text effects */
+.text-neon-cyan {
+  color: #00D1FF;
+  text-shadow: 0 0 10px rgba(0, 209, 255, 0.5);
+}
+
+.text-neon-green {
+  color: #00FF41;
+  text-shadow: 0 0 10px rgba(0, 255, 65, 0.5);
+}
+
+.text-neon-red {
+  color: #FF3131;
+  text-shadow: 0 0 10px rgba(255, 49, 49, 0.5);
+}
+
+/* Button styles */
+.btn-bloomberg {
+  background-color: #00D1FF;
+  color: #0A0E14;
+  font-weight: 600;
+  transition: all 0.2s ease;
+}
+
+.btn-bloomberg:hover {
+  background-color: #00B8E6;
+  box-shadow: 0 0 20px rgba(0, 209, 255, 0.4);
+}
+
+/* Chart tooltip customization */
+.recharts-tooltip-wrapper {
+  z-index: 100;
+}
+
+.recharts-default-tooltip {
+  background: #161B22 !important;
+  border: 1px solid #30363D !important;
+  border-radius: 4px !important;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5) !important;
+}
+
+.recharts-tooltip-label {
+  color: #E6EDF3 !important;
+}
+
+/* Loading shimmer */
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.shimmer {
+  background: linear-gradient(
+    90deg,
+    #161B22 0%,
+    #1C2128 50%,
+    #161B22 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+/* Pulse animation for alerts */
+@keyframes pulse-red {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(255, 49, 49, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 20px 5px rgba(255, 49, 49, 0.2);
+  }
+}
+
+.pulse-danger {
+  animation: pulse-red 2s infinite;
+}
+
+/* Bloomberg-style data grid */
+.data-grid {
+  font-family: var(--font-mono);
+  font-size: 12px;
+}
+
+.data-grid th {
+  background-color: #1C2128;
+  color: #8B949E;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-weight: 500;
+}
+
+.data-grid td {
+  border-bottom: 1px solid #30363D;
+}
+
+.data-grid tr:hover td {
+  background-color: rgba(0, 209, 255, 0.05);
+}
+
+/* Tab indicator - Bloomberg cyan */
+[data-state="active"] {
+  position: relative;
+  background-color: rgba(0, 209, 255, 0.1) !important;
+  color: #00D1FF !important;
+}
+
+[data-state="active"]::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: #00D1FF;
+}
+
+/* Progress bar */
+.progress-bloomberg {
+  background-color: #30363D;
+}
+
+.progress-bloomberg > div {
+  background: linear-gradient(90deg, #00D1FF 0%, #00FF41 100%);
+}
+
+/* Focus states */
+button:focus-visible,
+input:focus-visible,
+select:focus-visible {
+  outline: 2px solid #00D1FF;
+  outline-offset: 2px;
+}
+
+/* Slider styling */
+[role="slider"] {
+  background-color: #00D1FF !important;
+}
+
+/* Badge variants */
+.badge-safe {
+  background-color: rgba(0, 255, 65, 0.15);
+  color: #00FF41;
+  border: 1px solid rgba(0, 255, 65, 0.3);
+}
+
+.badge-danger {
+  background-color: rgba(255, 49, 49, 0.15);
+  color: #FF3131;
+  border: 1px solid rgba(255, 49, 49, 0.3);
+}
+
+.badge-info {
+  background-color: rgba(0, 209, 255, 0.15);
+  color: #00D1FF;
+  border: 1px solid rgba(0, 209, 255, 0.3);
+}
+
+/* Table styles */
+table {
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+thead th {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background-color: #1C2128;
+}
+
+/* Terminal-style monospace numbers */
+.mono-number {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.5px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .container {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+}
+
+/* Print styles */
+@media print {
+  body {
+    background: white;
+    color: black;
+  }
+  
+  .no-print {
+    display: none;
   }
 }
