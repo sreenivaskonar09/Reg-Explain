@@ -848,7 +848,7 @@ def render_explainer_tab():
     scenario_data = st.session_state.get('scenario_data')
     
     # Create static features for SHAP
-    X_static, feature_names = create_static_features(bank_df, scenario_data)
+    X_static, feature_names = create_static_features(st.session_state.bank_data, st.session_state.macro_data)
     
     # Run SHAP analysis
     with st.spinner("Computing SHAP values..."):
