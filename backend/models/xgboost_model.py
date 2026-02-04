@@ -60,6 +60,18 @@ class PPNRXGBoostModel:
         logger.info(f"XGBoost CV RMSE: {np.sqrt(-cv_scores.mean()):.6f}")
         
         return self
+
+    def preprocess(self, X):
+        """
+        Expose the internal scaler for SHAP explanations.
+        Standardizes features using the fitted scaler.
+        """
+        if not hasattr(self, 'scaler') or self.scaler is None:
+            # If no scaler exists, return data as-is (fallback)
+            return X
+            
+        # Transform the data using the already fitted scaler
+        return self.scaler.transform(X)
     
     def predict(self, X):
         """Generate PPNR predictions from static features"""
