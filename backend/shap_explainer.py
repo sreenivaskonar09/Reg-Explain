@@ -42,21 +42,22 @@ class SHAPExplainer:
         if self.explainer is None:
             raise ValueError("Explainer must be initialized first.")
         
-    # Ensure X is a 2D array
+        # Ensure X is a 2D array
         if X.ndim == 1:
             X = X.reshape(1, -1)
         
-    # CRITICAL FIX: Use the wrapper's preprocess method instead of calling scaler directly
-    # This ensures consistency with how the model was trained
+        # CRITICAL FIX: Use the wrapper's preprocess method instead of calling scaler directly
         try:
             X_scaled = self.xgb_model.preprocess(X)
+            # Add logic here to return explanations as intended
+            shap_values = self.explainer.shap_values(X_scaled)
+            return {"shap_values": shap_values}
         except ValueError as e:
             logger.error(f"Feature mismatch: {e}")
-        # If there's a mismatch, we provide a clearer error for the UI
             raise ValueError(f"Feature shape mismatch. Model expects {self.xgb_model.scaler.n_features_in_} features.")
         
     def explain_single_prediction(self, X_single: np.ndarray, 
-                                   prediction: float) -> Dict:
+                                 prediction: float) -> Dict:
         """
         Generate detailed explanation for a single prediction
         Used for scenario-specific analysis
