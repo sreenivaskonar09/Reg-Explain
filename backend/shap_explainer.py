@@ -38,40 +38,23 @@ class SHAPExplainer:
         logger.info("SHAP explainer initialized")
         
     def explain_predictions(self, X: np.ndarray) -> Dict:
-        """
-        Generate SHAP explanations for predictions
+    """Generate SHAP explanations for a set of predictions"""
+    if self.explainer is None:
+        raise ValueError("Explainer must be initialized first.")
         
-        Returns:
-            - Global feature importance
-            - Local explanations for each prediction
-        """
-        if self.explainer is None:
-            raise ValueError("Explainer must be initialized first")
-            
-        # Scale features
-        X_scaled = self.xgb_model.scaler.transform(X)
+    # Ensure X is a 2D array
+    if X.ndim == 1:
+        X = X.reshape(1, -1)
         
-        # Calculate SHAP values
-        self.shap_values = self.explainer.shap_values(X_scaled)
+    # CRITICAL FIX: Use the wrapper's preprocess method instead of calling scaler directly
+    # This ensures consistency with how the model was trained
+    try:
+        X_scaled = self.xgb_model.preprocess(X)
+    except ValueError as e:
+        logger.error(f"Feature mismatch: {e}")
+        # If there's a mismatch, we provide a clearer error for the UI
+        raise ValueError(f"Feature shape mismatch. Model expects {self.xgb_model.scaler.n_features_in_} features.")
         
-        # Global importance (mean absolute SHAP)
-        global_importance = np.abs(self.shap_values).mean(axis=0)
-        global_importance_dict = dict(zip(self.feature_names, global_importance))
-        
-        # Sort by importance
-        sorted_importance = sorted(
-            global_importance_dict.items(), 
-            key=lambda x: x[1], 
-            reverse=True
-        )
-        
-        return {
-            'shap_values': self.shap_values,
-            'global_importance': dict(sorted_importance),
-            'expected_value': self.explainer.expected_value,
-            'feature_names': self.feature_names
-        }
-    
     def explain_single_prediction(self, X_single: np.ndarray, 
                                    prediction: float) -> Dict:
         """
