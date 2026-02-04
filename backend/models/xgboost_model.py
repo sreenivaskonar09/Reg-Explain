@@ -108,70 +108,65 @@ class PPNRXGBoostModel:
         self.is_fitted = config['is_fitted']
 
 
+
 def create_static_features(bank_df, macro_df=None):
     """
-    Create static feature vectors for XGBoost
-    
-    Bank Features:
-    - CET1 ratio
-    - CRE exposure percentage
-    - Residential exposure percentage
-    - Total assets (log)
-    - NPL ratio
-    
-    Macro Stress Features (optional):
-    - Peak unemployment
-    - Peak VIX
-    - HPI decline
+    Create static feature vectors for XGBoost with RIGID SCHEMA.
+    Ensures the feature count never varies between Train and Test.
     """
+    # 1. Define the exact order of features the model expects
+    # This list MUST match what you used during training
+    feature_map = [
+        ('cet1_ratio', 0.0),
+        ('cre_exposure_pct', 0.0),
+        ('residential_exposure_pct', 0.0),
+        ('total_assets', 0.0), # Will be log-transformed
+        ('npl_ratio', 0.0),
+        ('tier1_leverage_ratio', 0.0)
+    ]
+    
+    # Macro features
+    macro_map = [
+        ('unemployment_rate', 'max'),
+        ('vix', 'max'),
+        ('hpi_growth', 'min'),
+        ('yield_curve_spread', 'mean')
+    ]
+    
     features = []
     feature_names = []
     
-    # Bank-specific features
-    if 'cet1_ratio' in bank_df.columns:
-        features.append(bank_df['cet1_ratio'].values)
-        feature_names.append('cet1_ratio')
-        
-    if 'cre_exposure_pct' in bank_df.columns:
-        features.append(bank_df['cre_exposure_pct'].values)
-        feature_names.append('cre_exposure')
-        
-    if 'residential_exposure_pct' in bank_df.columns:
-        features.append(bank_df['residential_exposure_pct'].values)
-        feature_names.append('residential_exposure')
-        
-    if 'total_assets' in bank_df.columns:
-        features.append(np.log(bank_df['total_assets'].values))
-        feature_names.append('total_assets_log')
-        
-    if 'npl_ratio' in bank_df.columns:
-        features.append(bank_df['npl_ratio'].values)
-        feature_names.append('npl_ratio')
-        
-    if 'tier1_leverage_ratio' in bank_df.columns:
-        features.append(bank_df['tier1_leverage_ratio'].values)
-        feature_names.append('tier1_leverage')
-        
-    # Add macro stress factors if provided
+    # 2. Build Bank Features (Force 0 if missing)
+    for col, default_val in feature_map:
+        if col == 'total_assets':
+            # Handle log transform specifically
+            val = np.log(bank_df.get(col, 1000000).values) # Default to avoid log(0)
+            name = 'total_assets_log'
+        else:
+            # .get() ensures we never crash or skip a column
+            val = bank_df.get(col, default_val).values
+            name = col
+            
+        features.append(val)
+        feature_names.append(name)
+
+    # 3. Build Macro Features (Force 0 if missing)
+    # Even if macro_df is None, we append 0s to maintain shape
     if macro_df is not None:
-        if 'unemployment_rate' in macro_df.columns:
-            peak_unemp = macro_df['unemployment_rate'].max()
-            features.append(np.full(len(bank_df), peak_unemp))
-            feature_names.append('unemployment_peak')
+        for col, agg_func in macro_map:
+            if col in macro_df.columns:
+                if agg_func == 'max': val = macro_df[col].max()
+                elif agg_func == 'min': val = macro_df[col].min()
+                else: val = macro_df[col].mean()
+            else:
+                val = 0.0
             
-        if 'vix' in macro_df.columns:
-            peak_vix = macro_df['vix'].max()
-            features.append(np.full(len(bank_df), peak_vix))
-            feature_names.append('vix_peak')
-            
-        if 'hpi_growth' in macro_df.columns:
-            min_hpi = macro_df['hpi_growth'].min()
-            features.append(np.full(len(bank_df), min_hpi))
-            feature_names.append('hpi_trough')
-            
-        if 'yield_curve_spread' in macro_df.columns:
-            avg_spread = macro_df['yield_curve_spread'].mean()
-            features.append(np.full(len(bank_df), avg_spread))
-            feature_names.append('yield_curve_avg')
-    
+            features.append(np.full(len(bank_df), val))
+            feature_names.append(f"{col}_{agg_func if agg_func != 'mean' else 'avg'}")
+    else:
+        # If no macro data, fill with zeros to match training shape
+        for col, agg_func in macro_map:
+            features.append(np.full(len(bank_df), 0.0))
+            feature_names.append(f"{col}_{agg_func if agg_func != 'mean' else 'avg'}")
+
     return np.column_stack(features), feature_names
