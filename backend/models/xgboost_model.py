@@ -115,17 +115,15 @@ def create_static_features(bank_df, macro_df=None):
     Ensures the feature count never varies between Train and Test.
     """
     # 1. Define the exact order of features the model expects
-    # This list MUST match what you used during training
     feature_map = [
         ('cet1_ratio', 0.0),
         ('cre_exposure_pct', 0.0),
         ('residential_exposure_pct', 0.0),
-        ('total_assets', 0.0), # Will be log-transformed
+        ('total_assets', 0.0),
         ('npl_ratio', 0.0),
         ('tier1_leverage_ratio', 0.0)
     ]
     
-    # Macro features
     macro_map = [
         ('unemployment_rate', 'max'),
         ('vix', 'max'),
@@ -136,37 +134,52 @@ def create_static_features(bank_df, macro_df=None):
     features = []
     feature_names = []
     
-    # 2. Build Bank Features (Force 0 if missing)
+    # 2. Build Bank Features with explicit length checking
+    n_samples = len(bank_df)
+    
     for col, default_val in feature_map:
         if col == 'total_assets':
-            # Handle log transform specifically
-            val = np.log(bank_df.get(col, 1000000).values) # Default to avoid log(0)
+            # Handle log transform with safety check
+            if col in bank_df.columns:
+                val = bank_df[col].values
+                val = np.where(val > 0, np.log(val), np.log(1000000))  # Safer log
+            else:
+                val = np.full(n_samples, np.log(1000000))
             name = 'total_assets_log'
         else:
-            # .get() ensures we never crash or skip a column
-            val = bank_df.get(col, default_val).values
+            if col in bank_df.columns:
+                val = bank_df[col].fillna(default_val).values
+            else:
+                val = np.full(n_samples, default_val)
             name = col
             
-        features.append(val)
+        features.append(val.reshape(-1))  # Ensure 1D
         feature_names.append(name)
 
-    # 3. Build Macro Features (Force 0 if missing)
-    # Even if macro_df is None, we append 0s to maintain shape
-    if macro_df is not None:
-        for col, agg_func in macro_map:
-            if col in macro_df.columns:
-                if agg_func == 'max': val = macro_df[col].max()
-                elif agg_func == 'min': val = macro_df[col].min()
-                else: val = macro_df[col].mean()
-            else:
-                val = 0.0
+    # 3. Build Macro Features - ALWAYS add them to maintain consistent shape
+    for col, agg_func in macro_map:
+        if macro_df is not None and col in macro_df.columns:
+            if agg_func == 'max': 
+                val = macro_df[col].max()
+            elif agg_func == 'min': 
+                val = macro_df[col].min()
+            else: 
+                val = macro_df[col].mean()
             
-            features.append(np.full(len(bank_df), val))
-            feature_names.append(f"{col}_{agg_func if agg_func != 'mean' else 'avg'}")
-    else:
-        # If no macro data, fill with zeros to match training shape
-        for col, agg_func in macro_map:
-            features.append(np.full(len(bank_df), 0.0))
-            feature_names.append(f"{col}_{agg_func if agg_func != 'mean' else 'avg'}")
+            # Handle NaN from aggregation
+            if pd.isna(val):
+                val = 0.0
+        else:
+            val = 0.0
+        
+        features.append(np.full(n_samples, val))
+        feature_names.append(f"{col}_{agg_func}")
 
-    return np.column_stack(features), feature_names
+    X = np.column_stack(features)
+    
+    # CRITICAL: Validate shape
+    expected_features = len(feature_map) + len(macro_map)
+    assert X.shape[1] == expected_features, \
+        f"Feature count mismatch! Expected {expected_features}, got {X.shape[1]}"
+    
+    return X, feature_names
