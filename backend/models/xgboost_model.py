@@ -114,6 +114,24 @@ def create_static_features(bank_df, macro_df=None):
     Create static feature vectors for XGBoost with RIGID SCHEMA.
     Ensures the feature count never varies between Train and Test.
     """
+    # ============== DEBUG START ==============
+    print("="*80)
+    print("DEBUG [create_static_features]: ENTRY")
+    print(f"  bank_df shape: {bank_df.shape}")
+    print(f"  bank_df columns: {list(bank_df.columns)}")
+    print(f"  bank_df dtypes:\n{bank_df.dtypes}")
+    
+    if macro_df is not None:
+        print(f"  macro_df type: {type(macro_df)}")
+        if isinstance(macro_df, pd.DataFrame):
+            print(f"  macro_df shape: {macro_df.shape}")
+            print(f"  macro_df columns: {list(macro_df.columns)}")
+        elif isinstance(macro_df, dict):
+            print(f"  macro_df keys: {list(macro_df.keys())}")
+    else:
+        print(f"  macro_df: None")
+    # ============== DEBUG END ==============
+    
     # 1. Define the exact order of features the model expects
     feature_map = [
         ('cet1_ratio', 0.0),
@@ -137,26 +155,39 @@ def create_static_features(bank_df, macro_df=None):
     # 2. Build Bank Features with explicit length checking
     n_samples = len(bank_df)
     
+    print(f"DEBUG: Building features for {n_samples} samples")
+    
     for col, default_val in feature_map:
         if col == 'total_assets':
             # Handle log transform with safety check
             if col in bank_df.columns:
                 val = bank_df[col].values
                 val = np.where(val > 0, np.log(val), np.log(1000000))  # Safer log
+                print(f"  ✓ {col} -> total_assets_log (from data)")
             else:
                 val = np.full(n_samples, np.log(1000000))
+                print(f"  ⚠ {col} -> total_assets_log (MISSING - using default)")
             name = 'total_assets_log'
         else:
             if col in bank_df.columns:
                 val = bank_df[col].fillna(default_val).values
+                print(f"  ✓ {col} (from data)")
             else:
                 val = np.full(n_samples, default_val)
+                print(f"  ⚠ {col} (MISSING - using default {default_val})")
             name = col
             
         features.append(val.reshape(-1))  # Ensure 1D
         feature_names.append(name)
 
     # 3. Build Macro Features - ALWAYS add them to maintain consistent shape
+    print(f"DEBUG: Building macro features...")
+    
+    # CRITICAL FIX: Handle dict vs DataFrame
+    if isinstance(macro_df, dict):
+        print(f"  macro_df is dict - converting to DataFrame")
+        macro_df = pd.DataFrame([macro_df])  # Convert dict to single-row DataFrame
+    
     for col, agg_func in macro_map:
         if macro_df is not None and col in macro_df.columns:
             if agg_func == 'max': 
@@ -169,8 +200,12 @@ def create_static_features(bank_df, macro_df=None):
             # Handle NaN from aggregation
             if pd.isna(val):
                 val = 0.0
+                print(f"  ⚠ {col}_{agg_func} = {val} (NaN -> 0)")
+            else:
+                print(f"  ✓ {col}_{agg_func} = {val}")
         else:
             val = 0.0
+            print(f"  ⚠ {col}_{agg_func} = {val} (MISSING - using 0)")
         
         features.append(np.full(n_samples, val))
         feature_names.append(f"{col}_{agg_func}")
@@ -179,6 +214,12 @@ def create_static_features(bank_df, macro_df=None):
     
     # CRITICAL: Validate shape
     expected_features = len(feature_map) + len(macro_map)
+    
+    print(f"DEBUG: Final feature matrix shape: {X.shape}")
+    print(f"DEBUG: Expected features: {expected_features}")
+    print(f"DEBUG: Feature names ({len(feature_names)}): {feature_names}")
+    print("="*80)
+    
     assert X.shape[1] == expected_features, \
         f"Feature count mismatch! Expected {expected_features}, got {X.shape[1]}"
     
