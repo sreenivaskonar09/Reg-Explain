@@ -1,0 +1,10 @@
+streamlit
+pandas
+numpy<2.0.0
+tensorflow-cpu
+xgboost
+scikit-learn
+shap
+plotly
+matplotlib
+python-dotenv
