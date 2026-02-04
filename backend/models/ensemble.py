@@ -102,8 +102,13 @@ class PPNREnsembleModel:
             'weights': {
                 'lstm': self.lstm_weight,
                 'xgboost': self.xgboost_weight
-            }
-        }
+            }}
+        print(f"DEBUG [ensemble.py]: X_static shape before XGBoost: {X_static.shape}")
+        if hasattr(self.xgboost_model, 'scaler') and self.xgboost_model.scaler is not None:
+            print(f"DEBUG [ensemble.py]: XGBoost expects {self.xgboost_model.scaler.n_features_in_} features")
+    
+        xgb_pred = self.xgboost_model.predict(X_static).flatten()
+        
     
     def get_model_contributions(self, X_temporal, X_static):
         """Calculate contribution of each model to final prediction"""
