@@ -38,7 +38,7 @@ class SHAPExplainer:
         logger.info("SHAP explainer initialized")
         
     def explain_predictions(self, X: np.ndarray) -> Dict:
-    """Generate SHAP explanations for a set of predictions"""
+        """Generate SHAP explanations for a set of predictions"""
         if self.explainer is None:
             raise ValueError("Explainer must be initialized first.")
         
