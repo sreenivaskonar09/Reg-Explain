@@ -41,12 +41,24 @@ class SHAPExplainer:
         """Generate SHAP explanations for a set of predictions"""
         if self.explainer is None:
             raise ValueError("Explainer must be initialized first.")
-        
-        # Ensure X is a 2D array
+    
+    # Ensure X is a 2D array
         if X.ndim == 1:
             X = X.reshape(1, -1)
-        
-        # CRITICAL FIX: Use the wrapper's preprocess method instead of calling scaler directly
+    
+    # ============== PASTE DEBUGGING CODE HERE ==============
+        print(f"DEBUG: X_static shape: {X.shape}")
+        print(f"DEBUG: Expected features: {self.xgb_model.scaler.n_features_in_}")
+        print(f"DEBUG: Model feature names: {self.xgb_model.feature_names}")
+        print(f"DEBUG: Number of feature names: {len(self.xgb_model.feature_names) if self.xgb_model.feature_names else 'None'}")
+    
+        if X.shape[1] != self.xgb_model.scaler.n_features_in_:
+            print(f"ERROR: Shape mismatch detected!")
+            print(f"  - Provided: {X.shape[1]} features")
+            print(f"  - Expected: {self.xgb_model.scaler.n_features_in_} features")
+    # ========================================================
+    
+    # CRITICAL FIX: Use the wrapper's preprocess method instead of calling scaler directly
         try:
             X_scaled = self.xgb_model.preprocess(X)
             # Add logic here to return explanations as intended
