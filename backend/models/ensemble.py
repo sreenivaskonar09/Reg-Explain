@@ -3,6 +3,7 @@ Ensemble Model: Weighted Average of LSTM and XGBoost
 Optimized to minimize RMSE against historical stress test results
 """
 import numpy as np
+import pandas as pd
 from scipy.optimize import minimize
 from sklearn.metrics import mean_squared_error
 import joblib
@@ -89,13 +90,13 @@ class PPNREnsembleModel:
         """Generate ensemble PPNR predictions"""
         if self.lstm_model is None or self.xgboost_model is None:
             raise ValueError("Both models must be set before prediction")
-            
+        
         lstm_pred = self.lstm_model.predict(X_temporal).flatten()
         xgb_pred = self.xgboost_model.predict(X_static).flatten()
-        
+    
         ensemble_pred = self.lstm_weight * lstm_pred + self.xgboost_weight * xgb_pred
-        
-        return {
+    
+        return {                                    # ← FUNCTION RETURNS HERE
             'ensemble': ensemble_pred,
             'lstm': lstm_pred,
             'xgboost': xgb_pred,
@@ -103,11 +104,12 @@ class PPNREnsembleModel:
                 'lstm': self.lstm_weight,
                 'xgboost': self.xgboost_weight
             }}
+    # ↓ THIS CODE NEVER RUNS (unreachable after return)
         print(f"DEBUG [ensemble.py]: X_static shape before XGBoost: {X_static.shape}")
         if hasattr(self.xgboost_model, 'scaler') and self.xgboost_model.scaler is not None:
             print(f"DEBUG [ensemble.py]: XGBoost expects {self.xgboost_model.scaler.n_features_in_} features")
-    
-        xgb_pred = self.xgboost_model.predict(X_static).flatten()
+
+        xgb_pred = self.xgboost_model.predict(X_static).flatten()  # ← DUPLICATE LINE
         
     
     def get_model_contributions(self, X_temporal, X_static):
@@ -216,7 +218,7 @@ class QuarterlyPPNRForecaster:
                     'stress_factor': stress_factor
                 })
         
-        import pandas as pd
+        
         return pd.DataFrame(forecasts)
     
     def _get_stress_factor(self, scenario_type, quarter):
