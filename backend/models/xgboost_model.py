@@ -42,7 +42,7 @@ class PPNRXGBoostModel:
         return self.model
     
     def fit(self, X, y, feature_names=None):
-    """Train the XGBoost model"""
+        """Train the XGBoost model"""
         if self.model is None:
             self.build_model()
         
@@ -50,20 +50,16 @@ class PPNRXGBoostModel:
     
         logger.info(f"Training XGBoost on {X.shape[0]} samples, {X.shape[1]} features...")
     
-    # Scale features
+        # Scale features
         X_scaled = self.scaler.fit_transform(X)
     
-    # Train model with progress indicator
+        # Train model with progress indicator
         self.model.fit(X_scaled, y, verbose=1)
         self.is_fitted = True
     
-    # SIMPLIFIED: Just do 3-fold CV instead of 5, or skip CV entirely for speed
-    # Option 1: Faster CV (3-fold instead of 5)
+        # SIMPLIFIED: Just do 3-fold CV instead of 5
         cv_scores = cross_val_score(self.model, X_scaled, y, cv=3, scoring='neg_mean_squared_error')
         logger.info(f"XGBoost CV RMSE: {np.sqrt(-cv_scores.mean()):.6f}")
-    
-    # Option 2: Skip CV entirely during training (fastest)
-    # logger.info(f"XGBoost training complete")
     
         return self
 
