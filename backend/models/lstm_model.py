@@ -3,6 +3,7 @@ LSTM Model for Temporal Sequence Processing
 Captures path-dependency of interest rate cycles and macroeconomic momentum
 """
 import numpy as np
+import pandas as pd  # ← MOVED HERE
 import os
 
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
@@ -163,6 +164,4 @@ def create_temporal_features(macro_df, sequence_length=9):
         features.append(feature_seq)
     
     return np.array(features)
-
-
-import pandas as pd
+# ← REMOVED: import pandas as pd from here
