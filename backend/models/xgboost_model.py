@@ -25,7 +25,7 @@ class PPNRXGBoostModel:
     def build_model(self, **kwargs):
         """Build XGBoost model with optimal parameters"""
         default_params = {
-            'n_estimators': 200,
+            'n_estimators': 100,
             'max_depth': 6,
             'learning_rate': 0.05,
             'subsample': 0.8,
@@ -42,23 +42,29 @@ class PPNRXGBoostModel:
         return self.model
     
     def fit(self, X, y, feature_names=None):
-        """Train the XGBoost model"""
+    """Train the XGBoost model"""
         if self.model is None:
             self.build_model()
-            
+        
         self.feature_names = feature_names or [f'feature_{i}' for i in range(X.shape[1])]
-        
-        # Scale features
+    
+        logger.info(f"Training XGBoost on {X.shape[0]} samples, {X.shape[1]} features...")
+    
+    # Scale features
         X_scaled = self.scaler.fit_transform(X)
-        
-        # Train model
-        self.model.fit(X_scaled, y)
+    
+    # Train model with progress indicator
+        self.model.fit(X_scaled, y, verbose=1)
         self.is_fitted = True
-        
-        # Cross-validation score
-        cv_scores = cross_val_score(self.model, X_scaled, y, cv=5, scoring='neg_mean_squared_error')
+    
+    # SIMPLIFIED: Just do 3-fold CV instead of 5, or skip CV entirely for speed
+    # Option 1: Faster CV (3-fold instead of 5)
+        cv_scores = cross_val_score(self.model, X_scaled, y, cv=3, scoring='neg_mean_squared_error')
         logger.info(f"XGBoost CV RMSE: {np.sqrt(-cv_scores.mean()):.6f}")
-        
+    
+    # Option 2: Skip CV entirely during training (fastest)
+    # logger.info(f"XGBoost training complete")
+    
         return self
 
     def preprocess(self, X):
