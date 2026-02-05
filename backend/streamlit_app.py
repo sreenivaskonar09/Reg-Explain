@@ -577,53 +577,72 @@ def render_forecast_tab():
         # Generate scenario data
             fetcher = FREDDataFetcher()
         
-        if scenario == 'custom':
-            params = st.session_state.get('custom_params', {})
+            if scenario == 'custom':
+                params = st.session_state.get('custom_params', {})
             # Generate custom scenario
-            generator = SyntheticBankDataGenerator()
-            scenario_data = generator.generate_scenario_data('severely_adverse', n_quarters=9)
+                generator = SyntheticBankDataGenerator()
+                scenario_data = generator.generate_scenario_data('severely_adverse', n_quarters=9)
             # Override with custom params
-            scenario_data['unemployment_rate'] = params.get('unemployment', 10.0)
-            scenario_data['vix'] = params.get('vix', 72)
-            scenario_data['hpi_growth'] = params.get('hpi_decline', -25)
-        else:
-            scenario_data = fetcher.project_scenario(scenario, n_quarters=9)
+                scenario_data['unemployment_rate'] = params.get('unemployment', 10.0)
+                scenario_data['vix'] = params.get('vix', 72)
+                scenario_data['hpi_growth'] = params.get('hpi_decline', -25)
+            else:
+                scenario_data = fetcher.project_scenario(scenario, n_quarters=9)
         
         # Get latest bank data
-        bank_df = st.session_state.bank_data
-        if 'quarter' in bank_df.columns:
-            bank_df = bank_df.groupby('bank_id').last().reset_index()
+            bank_df = st.session_state.bank_data
+            if 'quarter' in bank_df.columns:
+                bank_df = bank_df.groupby('bank_id').last().reset_index()
         
         # ============== ADD DEBUG HERE ==============
-        print("="*80)
-        print("DEBUG [render_forecast_tab]: Before forecast")
-        print(f"bank_df shape: {bank_df.shape}")
-        print(f"bank_df columns: {list(bank_df.columns)}")
-        print(f"scenario_data type: {type(scenario_data)}")
+            print("="*80)
+            print("DEBUG [render_forecast_tab]: Before forecast")
+            print(f"bank_df shape: {bank_df.shape}")
+            print(f"bank_df columns: {list(bank_df.columns)}")
+            print(f"scenario_data type: {type(scenario_data)}")
         
-        if isinstance(scenario_data, pd.DataFrame):
-            print(f"scenario_data shape: {scenario_data.shape}")
-            print(f"scenario_data columns: {list(scenario_data.columns)}")
-        elif isinstance(scenario_data, dict):
-            print(f"scenario_data keys: {list(scenario_data.keys())}")
-        else:
-            print(f"scenario_data: {scenario_data}")
+            if isinstance(scenario_data, pd.DataFrame):
+                print(f"scenario_data shape: {scenario_data.shape}")
+                print(f"scenario_data columns: {list(scenario_data.columns)}")
+            elif isinstance(scenario_data, dict):
+                print(f"scenario_data keys: {list(scenario_data.keys())}")
+            else:
+                print(f"scenario_data: {scenario_data}")
         
         # Check what the model expects
-        if hasattr(st.session_state.ensemble_model, 'xgboost_model'):
-            xgb_model = st.session_state.ensemble_model.xgboost_model
-            if hasattr(xgb_model, 'scaler') and xgb_model.scaler is not None:
-                print(f"XGBoost model expects: {xgb_model.scaler.n_features_in_} features")
-                if hasattr(xgb_model, 'feature_names'):
-                    print(f"Expected feature names: {xgb_model.feature_names}")
-        print("="*80)
+            if hasattr(st.session_state.ensemble_model, 'xgboost_model'):
+                xgb_model = st.session_state.ensemble_model.xgboost_model
+                if hasattr(xgb_model, 'scaler') and xgb_model.scaler is not None:
+                    print(f"XGBoost model expects: {xgb_model.scaler.n_features_in_} features")
+                    if hasattr(xgb_model, 'feature_names'):
+                        print(f"Expected feature names: {xgb_model.feature_names}")
+            print("="*80)
         # ============================================
         
         # Generate PPNR forecasts
-        forecaster = QuarterlyPPNRForecaster(st.session_state.ensemble_model)
-        ppnr_forecasts = forecaster.forecast(bank_df, scenario_data, n_quarters=9)
-        
-        # ... rest of your code ...
+            forecaster = QuarterlyPPNRForecaster(st.session_state.ensemble_model)
+            ppnr_forecasts = forecaster.forecast(bank_df, scenario_data, n_quarters=9)
+            thresholds = RegulatoryThresholds()
+            reg_params = st.session_state.get('regulatory_thresholds', {})
+            thresholds.CET1_MINIMUM = reg_params.get('cet1_min', 0.045)
+            thresholds.SCB_DEFAULT = reg_params.get('scb', 0.025)
+            
+            engine = CapitalEngine(thresholds)
+            trajectory = engine.calculate_cet1_trajectory(
+                bank_df, ppnr_forecasts, scenario_data, n_quarters=9
+            )
+            
+            st.session_state.trajectory_results = trajectory
+            st.session_state.scenario_data = scenario_data
+            st.session_state.ppnr_forecasts = ppnr_forecasts
+            
+            # Breach analysis
+            breach_analysis = engine.get_breach_analysis(trajectory)
+            
+            st.success("✅ Forecast complete")
+            
+            # Display results
+            render_forecast_results(trajectory, breach_analysis, scenario_data)
 
 
 def render_forecast_results(trajectory: pd.DataFrame, breach_analysis: dict, scenario_data: pd.DataFrame):
