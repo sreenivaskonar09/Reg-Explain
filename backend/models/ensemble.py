@@ -148,49 +148,53 @@ class QuarterlyPPNRForecaster:
     def forecast(self, bank_data, scenario_data, n_quarters=9):
         """
         Generate 9-quarter PPNR forecast
-        
+    
         Args:
             bank_data: DataFrame with bank characteristics
             scenario_data: DataFrame with macro scenario for each quarter
             n_quarters: Forecast horizon (default 9 per Fed requirements)
-            
+        
         Returns:
             DataFrame with quarterly PPNR projections
         """
         from .lstm_model import create_temporal_features
         from .xgboost_model import create_static_features
-        
+    
         forecasts = []
-        
+    
         for q in range(n_quarters):
             # Get macro data up to current quarter
             macro_to_q = scenario_data[scenario_data['quarter'] <= q + 1]
-            
+        
             # Create features
             X_temporal = create_temporal_features(macro_to_q)
-            
-            # CRITICAL FIX: Don't pass macro features to match training (5 features only)
-            X_static, feature_names = create_static_features(bank_data, macro_df=None)
-            
-            # Handle shape mismatches
+        
+            # OPTION 2: Pass macro features to get 10 features (requires retrained model)
+            X_static, feature_names = create_static_features(
+                bank_data, 
+                macro_df=macro_to_q,  # ← Changed from None
+                include_macro=True     # ← Added this parameter
+            )    
+        
+        # Handle shape mismatches
             if len(X_temporal) == 0:
                 X_temporal = np.zeros((len(bank_data), 9, 3))
-            
-            # Ensure temporal has correct shape
+        
+        # Ensure temporal has correct shape
             if X_temporal.shape[0] < len(bank_data):
                 X_temporal = np.tile(X_temporal[-1:], (len(bank_data), 1, 1))
-            
-            # Get predictions
+        
+        # Get predictions
             predictions = self.ensemble.predict(X_temporal[:len(bank_data)], X_static)
-            
-            # Apply scenario adjustments
+        
+        # Apply scenario adjustments
             scenario_type = scenario_data['scenario'].iloc[0]
             stress_factor = self._get_stress_factor(scenario_type, q)
-            
+        
             for i, (idx, bank) in enumerate(bank_data.iterrows()):
                 base_ppnr = predictions['ensemble'][i] if i < len(predictions['ensemble']) else predictions['ensemble'][0]
                 adjusted_ppnr = base_ppnr * stress_factor
-                
+            
                 forecasts.append({
                     'bank_id': bank.get('bank_id', f'BANK_{i:03d}'),
                     'bank_name': bank.get('bank_name', 'Unknown Bank'),
@@ -201,7 +205,7 @@ class QuarterlyPPNRForecaster:
                     'xgb_component': predictions['xgboost'][i] if i < len(predictions['xgboost']) else predictions['xgboost'][0],
                     'stress_factor': stress_factor
                 })
-        
+    
         return pd.DataFrame(forecasts)
     
     def _get_stress_factor(self, scenario_type, quarter):
