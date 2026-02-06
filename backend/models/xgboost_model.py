@@ -111,30 +111,16 @@ class PPNRXGBoostModel:
 
 
 
-def create_static_features(bank_df, macro_df=None):
+def create_static_features(bank_df, macro_df=None, include_macro=True, verbose=False):
     """
     Create static feature vectors for XGBoost with RIGID SCHEMA.
-    Ensures the feature count never varies between Train and Test.
+    
+    Args:
+        bank_df: DataFrame with bank-level features
+        macro_df: DataFrame or dict with macro scenario data
+        include_macro: If False, skip macro features entirely
+        verbose: If True, print debug information
     """
-    # ============== DEBUG START ==============
-    print("="*80)
-    print("DEBUG [create_static_features]: ENTRY")
-    print(f"  bank_df shape: {bank_df.shape}")
-    print(f"  bank_df columns: {list(bank_df.columns)}")
-    print(f"  bank_df dtypes:\n{bank_df.dtypes}")
-    
-    if macro_df is not None:
-        print(f"  macro_df type: {type(macro_df)}")
-        if isinstance(macro_df, pd.DataFrame):
-            print(f"  macro_df shape: {macro_df.shape}")
-            print(f"  macro_df columns: {list(macro_df.columns)}")
-        elif isinstance(macro_df, dict):
-            print(f"  macro_df keys: {list(macro_df.keys())}")
-    else:
-        print(f"  macro_df: None")
-    # ============== DEBUG END ==============
-    
-    # 1. Define the exact order of features the model expects
     feature_map = [
         ('cet1_ratio', 0.0),
         ('cre_exposure_pct', 0.0),
@@ -151,78 +137,58 @@ def create_static_features(bank_df, macro_df=None):
         ('yield_curve_spread', 'mean')
     ]
     
+    n_samples = len(bank_df)
     features = []
     feature_names = []
     
-    # 2. Build Bank Features with explicit length checking
-    n_samples = len(bank_df)
-    
-    print(f"DEBUG: Building features for {n_samples} samples")
-    
+    # Build Bank Features
     for col, default_val in feature_map:
         if col == 'total_assets':
-            # Handle log transform with safety check
             if col in bank_df.columns:
                 val = bank_df[col].values
-                val = np.where(val > 0, np.log(val), np.log(1000000))  # Safer log
-                print(f"  ✓ {col} -> total_assets_log (from data)")
+                val = np.where(val > 0, np.log(val), np.log(1000000))
             else:
                 val = np.full(n_samples, np.log(1000000))
-                print(f"  ⚠ {col} -> total_assets_log (MISSING - using default)")
             name = 'total_assets_log'
         else:
             if col in bank_df.columns:
                 val = bank_df[col].fillna(default_val).values
-                print(f"  ✓ {col} (from data)")
             else:
                 val = np.full(n_samples, default_val)
-                print(f"  ⚠ {col} (MISSING - using default {default_val})")
             name = col
-            
-        features.append(val.reshape(-1))  # Ensure 1D
-        feature_names.append(name)
-
-    # 3. Build Macro Features - ALWAYS add them to maintain consistent shape
-    print(f"DEBUG: Building macro features...")
-    
-    # CRITICAL FIX: Handle dict vs DataFrame
-    if isinstance(macro_df, dict):
-        print(f"  macro_df is dict - converting to DataFrame")
-        macro_df = pd.DataFrame([macro_df])  # Convert dict to single-row DataFrame
-    
-    for col, agg_func in macro_map:
-        if macro_df is not None and col in macro_df.columns:
-            if agg_func == 'max': 
-                val = macro_df[col].max()
-            elif agg_func == 'min': 
-                val = macro_df[col].min()
-            else: 
-                val = macro_df[col].mean()
-            
-            # Handle NaN from aggregation
-            if pd.isna(val):
-                val = 0.0
-                print(f"  ⚠ {col}_{agg_func} = {val} (NaN -> 0)")
-            else:
-                print(f"  ✓ {col}_{agg_func} = {val}")
-        else:
-            val = 0.0
-            print(f"  ⚠ {col}_{agg_func} = {val} (MISSING - using 0)")
         
-        features.append(np.full(n_samples, val))
-        feature_names.append(f"{col}_{agg_func}")
-
+        features.append(val)
+        feature_names.append(name)
+    
+    # Build Macro Features - ONLY if include_macro=True
+    if include_macro:
+        if isinstance(macro_df, dict):
+            macro_df = pd.DataFrame([macro_df])
+        
+        for col, agg_func in macro_map:
+            if macro_df is not None and col in macro_df.columns:
+                if agg_func == 'max':
+                    val = macro_df[col].max()
+                elif agg_func == 'min':
+                    val = macro_df[col].min()
+                else:
+                    val = macro_df[col].mean()
+                
+                val = 0.0 if pd.isna(val) else val
+            else:
+                val = 0.0
+            
+            features.append(np.full(n_samples, val))
+            feature_names.append(f"{col}_{agg_func}")
+    
     X = np.column_stack(features)
     
-    # CRITICAL: Validate shape
-    expected_features = len(feature_map) + len(macro_map)
-    
-    print(f"DEBUG: Final feature matrix shape: {X.shape}")
-    print(f"DEBUG: Expected features: {expected_features}")
-    print(f"DEBUG: Feature names ({len(feature_names)}): {feature_names}")
-    print("="*80)
-    
+    # Validate shape
+    expected_features = len(feature_map) + (len(macro_map) if include_macro else 0)
     assert X.shape[1] == expected_features, \
         f"Feature count mismatch! Expected {expected_features}, got {X.shape[1]}"
+    
+    if verbose:
+        logger.info(f"Created feature matrix: {X.shape}, features: {feature_names}")
     
     return X, feature_names
